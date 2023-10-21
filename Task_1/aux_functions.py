@@ -147,7 +147,7 @@ def newton_method_vect(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
     """
     x = x0
     num_vars = len(x)
-    grad_fx = np.zeros(x.shape())
+    grad_fx = np.zeros(x.shape)
 
     for iter in range(max_iter):
         fx = f(x)

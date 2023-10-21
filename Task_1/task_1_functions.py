@@ -1,5 +1,5 @@
 import numpy as np
-from aux_functions import rk4, newton_method_vect
+from aux_functions import rk4, newton_method
 
 
 def beam_momentum_ode(x, y):
@@ -13,9 +13,9 @@ def beam_momentum_ode(x, y):
     Returns:
         y_dot (numpy.ndarray): Derivative of the second input: y_dot = [y', y'', y''', ...].
     """
-    y_dot = np.zeros(y.shape())
+    y_dot = np.zeros(y.shape)
     y_dot[0] = y[1]
-    y_dot[1] = -(1+x**2)*y[0] - 1
+    y_dot[1] = -(1 + x**2) * y[0] - 1
 
     return y_dot
 
@@ -51,35 +51,35 @@ def shooting_method(f, x_bc, y_bc, is_bc, N):
         # Block the components of the Initial Condition which are actual BCs
         for ii in range(len(y_IC)):
             if is_bc[ii, 0]:
-                y_IC[i] = y_bc[ii, 0]
+                y_IC[ii] = y_bc[ii, 0]
 
         # Propagate the equation using Runge-Kutta method
         x = np.zeros([1, N+1])
         y = np.zeros([len(y_IC), N+1])
-        x[0] = x0
+        x[:, 0] = x0
         y[:, 0] = y_IC
-        for ii in range(N+1):
-            x[ii+1], y[:, ii+1] = rk4(f, x[ii], y[:, ii], h)
+        for ii in range(N):
+            x[:, ii+1], y[:, ii+1] = rk4(f, x[:, ii], y[:, ii], h)
 
         # Check difference in the boundary condition
         diff = 0
         for ii in range(len(y_IC)):
             if is_bc[ii, 1]:
-                diff += y[ii, N+1] - y_bc[ii, 1]
+                diff += y[ii, N] - y_bc[ii, 1]
 
         return diff
 
     # Find the roots of the shooting function, that is, the initial condition
     # which makes the final state match the boundary condition
-    y0_root = newton_method_vect(shooting_function, y0)
+    y0_root, niter = newton_method(shooting_function, y0)
     y0 = y0_root
 
     # Propagate the equation with that initial condition using Runge-Kutta method
     x = np.zeros([1, N + 1])
     y = np.zeros([len(y0), N + 1])
-    x[0] = x0
+    x[:, 0] = x0
     y[:, 0] = y0
-    for ii in range(N + 1):
-        x[ii + 1], y[:, ii + 1] = rk4(f, x[ii], y[:, ii], h)
+    for ii in range(N):
+        x[:, ii+1], y[:, ii+1] = rk4(f, x[:, ii], y[:, ii], h)
 
     return y0, x, y
