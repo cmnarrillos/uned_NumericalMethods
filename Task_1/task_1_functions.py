@@ -1,5 +1,5 @@
 import numpy as np
-from aux_functions import rk4, newton_method
+from aux_functions import rk4, newton_method, newton_method_vect
 
 
 def beam_momentum_ode(x, y):
@@ -23,7 +23,7 @@ def shooting_method(f, x_bc, y_bc, is_bc, N):
     """
     Shooting method for solving boundary condition ODE. Requires:
         - A propagator, in this case order 4 Runge-Kutta (rk4) will be used
-        - A root-finder, here a vectorial Newton-Raphson (newton_method_vect)
+        - A root-finder, here a vectorial Newton-Raphson (newton_method/newton_method_vect)
 
     Args:
         f (function): ODE to solve with the given BCs.
@@ -71,7 +71,10 @@ def shooting_method(f, x_bc, y_bc, is_bc, N):
 
     # Find the roots of the shooting function, that is, the initial condition
     # which makes the final state match the boundary condition
-    y0_root, niter = newton_method(shooting_function, y0)
+    if len(is_bc[:, 0]) - sum(is_bc[:, 0]) > 1:
+        y0_root, niter = newton_method_vect(shooting_function, y0)
+    else:
+        y0_root, niter = newton_method(shooting_function, y0)
     y0 = y0_root
 
     # Propagate the equation with that initial condition using Runge-Kutta method
