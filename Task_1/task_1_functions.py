@@ -4,7 +4,8 @@ from aux_functions import rk4, newton_method, newton_method_vect
 
 def beam_momentum_ode(x, y):
     """
-    Right hand side of the ODE representing the
+    Right hand side of the ODE representing the momentum of a variable stiffness beam compressed
+    by a longitudinal force under a transversal distributed load: y'' = -(1+x^2) y - 1
 
     Args:
         x (float): Independent variable of the equation.
@@ -18,6 +19,49 @@ def beam_momentum_ode(x, y):
     y_dot[1] = -(1 + x**2) * y[0] - 1
 
     return y_dot
+
+
+def p_beam(x):
+    """
+    1-variable function, multiplying y' in the ODE y'' = p(x)*y' + q(x)*y + r(x).
+
+    Args:
+        x(np.ndarray): Vector of independent variable discretized in a set of positions.
+
+    Returns:
+        p(x)=0 (np.ndarray): Values of p(x) for the beam problem in the given positions.
+
+    """
+    return np.zeros(x.shape)
+
+
+def q_beam(x):
+    """
+    1-variable function, multiplying y in the ODE y'' = p(x)*y' + q(x)*y + r(x).
+
+    Args:
+        x(np.ndarray): Vector of independent variable discretized in a set of positions.
+
+    Returns:
+        q(x)=-(1 + x^2) (np.ndarray): Values of q(x) for the beam problem in the set.
+
+    """
+    return -(1 + x**2)
+
+
+def r_beam(x):
+    """
+    1-variable function, independent term in the ODE y'' = p(x)*y' + q(x)*y + r(x).
+
+    Args:
+        x(np.ndarray): Vector of independent variable discretized in a set of positions.
+
+    Returns:
+        r(x)=-1 (np.ndarray): Values of r(x) for the beam problem in the set.
+
+    """
+    return -np.ones(x.shape)
+
 
 def shooting_method(f, x_bc, y_bc, is_bc, N):
     """
@@ -86,3 +130,43 @@ def shooting_method(f, x_bc, y_bc, is_bc, N):
         x[:, ii+1], y[:, ii+1] = rk4(f, x[:, ii], y[:, ii], h)
 
     return y0, x, y
+
+
+def finite_diff_order2(p, q, r, x_bc, y_bc, N):
+    """
+    Function which creates the linear system Ay=b obtained when applying finite difference method
+    to the ODE: y'' = p(x)*y' + q(x)*y + r(x) with BCs imposed on y_0, y_{N+1}
+
+    Args:
+        p (function): 1-variable function, multiplying y' in the ODE.
+        q (function): 1-variable function, multiplying y in the ODE.
+        r (function): 1-variable function, the independent term of the ODE.
+        x_bc (tuple): Pair of values of x where BCs are applied.
+        y_bc (tuple): Boundary Conditions fixed for the equation.
+        N (int): Number of steps to discretize the interval given at x_BC, also dictates the
+                 size of the resulting matrix and vector.
+
+    Returns:
+        A (np.ndarray): (N-1)x(N-1) matrix with the coefficients of the resulting linear system.
+        b (np.ndarray): (N-1) vector with the independent terms of the resulting linear system.
+    """
+    # Discretize the interval and obtain the stepsize
+    x = np.linspace(x_bc[0], x_bc[-1], N+1)
+    h = x[1]-x[0]
+
+    # Generate the matrix A
+    A = np.zeros([N-1, N-1])
+    for ii in range(N-1):
+        A[ii, ii] = 2 + h**2 * q(x[ii])
+        if ii > 0:
+            A[ii, ii-1] = -1 - h/2 * p(x[ii])
+        if ii < N-2:
+            A[ii, ii+1] = -1 + h/2 * p(x[ii])
+
+    # Generate the vector b
+    b = -h**2 * r(x[1:-1])
+    b[0] += (1 + h/2 * p(x[1])) * y_bc[0]
+    b[-1] += (1 + h/2 * p(x[-2])) * y_bc[-1]
+
+    return A, b
+
