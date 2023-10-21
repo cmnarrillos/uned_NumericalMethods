@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def rk4(f, t0, y0, h):
     """
     Apply the Runge-Kutta method of order 4 to solve a first-order ordinary

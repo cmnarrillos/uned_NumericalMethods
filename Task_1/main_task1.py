@@ -30,7 +30,7 @@ plt.savefig(f'./Figures/test_shooting_N_{N}.png')
 # Finite differences
 x_bc = (-1, 1)
 y_bc = (0, 0)
-A, b = finite_diff_order2(p=p_beam, q=q_beam, r=r_beam, x_bc=x_bc, y_bc=y_bc, N=N)
+A, b = finite_diff_order2(p=p_beam, q=q_beam, r=r_beam, x_bc=x_bc, y_bc=y_bc, n=N)
 
 y_intermediate = solve_linear_system_with_lu_decomposition(A, b)
 x = np.linspace(-1, 1, N+1)
