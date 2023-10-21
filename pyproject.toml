@@ -4,10 +4,10 @@ version = "0.1.0"
 description = ""
 authors = ["cmnarrillos <cmorenonarrillos@gmail.com>"]
 readme = "README.md"
-packages = [{include = "uned_numericalmethods"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+matplotlib = "^3.8.0"
 
 
 [build-system]
