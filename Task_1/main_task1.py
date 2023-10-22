@@ -21,10 +21,13 @@ N = 100
 y0, x, y = shooting_method(beam_momentum_ode, x_bc, y_bc, is_bc, N)
 
 print(f'Initial condition: {y0}')
-
-plt.plot(x[0, :], y[0, :], label='shooting')
+y_plot = y[:, 0]
+plt.plot(x, y_plot, label='shooting')
 plt.xlabel('$ x=\\xi/L $')
 plt.ylabel('$ y=M/(p_0 L^2) $')
+plt.xlim(min(x), max(x))
+plt.ylim(min(y_plot)*1.1 - 0.1, max(y_plot)*1.1 + 0.1)
+plt.grid('minor')
 plt.savefig(f'./Figures/test_shooting_N_{N}.png')
 
 # Finite differences
@@ -38,14 +41,20 @@ y = np.concatenate(([y_bc[0]], y_intermediate, [y_bc[-1]]))
 
 plt.plot(x, y, label='finite_diff')
 plt.legend()
+plt.xlabel('$ x=\\xi/L $')
+plt.ylabel('$ y=M/(p_0 L^2) $')
 plt.xlim(min(x), max(x))
 plt.ylim(min(y)*1.1 - 0.1, max(y)*1.1 + 0.1)
+plt.grid('minor')
 plt.savefig(f'./Figures/test_finite_diff_vs_shooting_N_{N}.png')
 
 plt.figure()
 
 plt.plot(x, y, label='finite_diff')
 plt.legend()
+plt.xlabel('$ x=\\xi/L $')
+plt.ylabel('$ y=M/(p_0 L^2) $')
 plt.xlim(min(x), max(x))
 plt.ylim(min(y)*1.1 - 0.1, max(y)*1.1 + 0.1)
+plt.grid('minor')
 plt.savefig(f'./Figures/test_finite_diff_N_{N}.png')

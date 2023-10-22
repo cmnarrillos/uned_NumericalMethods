@@ -98,18 +98,18 @@ def shooting_method(f, x_bc, y_bc, is_bc, n):
                 y_ic[jj] = y_bc[jj, 0]
 
         # Propagate the equation using Runge-Kutta method
-        x = np.zeros([1, n + 1])
-        y = np.zeros([len(y_ic), n + 1])
-        x[:, 0] = x0
-        y[:, 0] = y_ic
+        x = np.zeros([n + 1])
+        y = np.zeros([n + 1, len(y_ic)])
+        x[0] = x0
+        y[0] = y_ic
         for jj in range(n):
-            x[:, jj + 1], y[:, jj + 1] = rk4(f, x[:, jj], y[:, jj], h)
+            x[jj + 1], y[jj + 1] = rk4(f, x[jj], y[jj], h)
 
         # Check difference in the boundary condition
         diff = 0
         for jj in range(len(y_ic)):
             if is_bc[jj, 1]:
-                diff += y[jj, n] - y_bc[jj, 1]
+                diff += y[n, jj] - y_bc[jj, 1]
 
         return diff
 
@@ -122,12 +122,12 @@ def shooting_method(f, x_bc, y_bc, is_bc, n):
     y0 = y0_root
 
     # Propagate the equation with that initial condition using Runge-Kutta method
-    x_out = np.zeros([1, n + 1])
-    y_out = np.zeros([len(y0), n + 1])
-    x_out[:, 0] = x0
-    y_out[:, 0] = y0
+    x_out = np.zeros([n + 1])
+    y_out = np.zeros([n + 1, len(y0)])
+    x_out[0] = x0
+    y_out[0] = y0
     for ii in range(n):
-        x_out[:, ii+1], y_out[:, ii+1] = rk4(f, x_out[:, ii], y_out[:, ii], h)
+        x_out[ii+1], y_out[ii+1] = rk4(f, x_out[ii], y_out[ii], h)
 
     return y0, x_out, y_out
 
