@@ -4,13 +4,14 @@ from aux_functions import rk4, newton_method, newton_method_vect
 
 def beam_momentum_ode(x, y, params):
     """
-    Right hand side of the ODE representing the momentum of a variable stiffness beam compressed
-    by a longitudinal force under a transversal distributed load: y'' = -(1+x^2) y - 1
+    Right hand side of the ODE representing the normalized momentum y of a variable stiffness beam
+    compressed by a longitudinal force under a transversal distributed load:
+        y'' = -(1+x^2) y - 1
 
     Args:
         x (float): Independent variable of the equation.
         y (numpy.ndarray): Dependent variable and successive derivatives: y = [y, y', y'', ...].
-        params (struct): Structure with params of the ODE (not used in this case, but kept for
+        params (dict): Structure with params of the ODE (not used in this case, but kept for
                          standard convention).
 
     Returns:
@@ -19,6 +20,33 @@ def beam_momentum_ode(x, y, params):
     y_dot = np.zeros(y.shape)
     y_dot[0] = y[1]
     y_dot[1] = -(1 + x**2) * y[0] - 1
+
+    return y_dot
+
+
+def beam_momentum_and_deformation_ode(x, y, params):
+    """
+    Right hand side of the ODE representing the normalized momentum y of a variable stiffness beam
+    compressed by a longitudinal force under a transversal distributed load:
+        y'' = -(1+x^2) y - 1
+    And rhs of ODE representing the normalized deformation v of that beam associated to normalized
+    momentum y using Euler-Bernouilli beam model:
+        v'' = p_0*L/P * y / (1+x^2)
+
+    Args:
+        x (float): Independent variable of the equation.
+        y (numpy.ndarray): Dependent variable and successive derivatives: y = [y, y', v, v'].
+        params (dict): Structure with params of the ODE:
+            - params.load_factor (float): normalized factor p_0*L/P from the original equation
+
+    Returns:
+        y_dot (numpy.ndarray): Derivative of the second input: y_dot = [y', y'', v', v''].
+    """
+    y_dot = np.zeros(y.shape)
+    y_dot[0] = y[1]
+    y_dot[1] = -(1 + x**2) * y[0] - 1
+    y_dot[2] = y[3]
+    y_dot[3] = params['load_factor'] * y[0] / (1 + x**2)
 
     return y_dot
 
@@ -78,7 +106,7 @@ def shooting_method(f, x_bc, y_bc, is_bc, n, params):
         is_bc (numpy.ndarray, boolean): Whether corresponding values from the previous
                                         input are actually fixed or not.
         n (int): Number of steps to divide each subinterval.
-        params (struct): Used to pass params to the ODE which is being propagated.
+        params (dict): Used to pass params to the ODE which is being propagated.
 
     Returns:
         y0 (numpy.ndarray): Initial condition which is equivalent to the given BCs.
@@ -109,16 +137,16 @@ def shooting_method(f, x_bc, y_bc, is_bc, n, params):
             x[jj + 1], y[jj + 1] = rk4(f, x[jj], y[jj], h, params)
 
         # Check difference in the boundary condition
-        diff = 0
+        diff = np.zeros(y_ic.shape)
         for jj in range(len(y_ic)):
-            if is_bc[jj, 1]:
-                diff += y[n, jj] - y_bc[jj, 1]
+            if is_bc[jj, -1]:
+                diff[jj] = y[n, jj] - y_bc[jj, -1]
 
         return diff
 
     # Find the roots of the shooting function, that is, the initial condition
     # which makes the final state match the boundary condition
-    if len(is_bc[:, 0]) - sum(is_bc[:, 0]) > 1:
+    if len(is_bc[:, 0]) > 1:
         y0_root, niter = newton_method_vect(shooting_function, y0)
     else:
         y0_root, niter = newton_method(shooting_function, y0)

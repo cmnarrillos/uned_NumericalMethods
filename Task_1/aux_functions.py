@@ -12,7 +12,7 @@ def rk4(f, t0, y0, h, params):
         t0 (float): The initial time.
         y0 (numpy.ndarray): The initial value of y at time t0.
         h (float): The step size.
-        params (struct): Used to pass params to the ODE which is being propagated.
+        params (dict): Used to pass params to the ODE which is being propagated.
 
     Returns:
         t_next (float): The updated time
@@ -29,7 +29,7 @@ def rk4(f, t0, y0, h, params):
     return t_next, y_next
 
 
-def newton_method(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
+def newton_method(f, x0, tol=1e-6, max_iter=100, epsilon=1e-6):
     """
     Newton's method to find the root of a function.
 
@@ -49,10 +49,10 @@ def newton_method(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
     for ii in range(max_iter):
         fx = f(x)
         # Approximate the derivative using finite differences
-        dx = eps  # Small perturbation for finite differences
+        dx = epsilon  # Small perturbation for finite differences
         derivative = (f(x + dx) - fx) / dx
 
-        if abs(fx) < tol:
+        if np.all(abs(fx) < tol):
             return x, ii
         x = x - fx / derivative
 
@@ -131,7 +131,7 @@ def solve_linear_system_with_lu_decomposition(A, b):
     return solution
 
 
-def newton_method_vect(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
+def newton_method_vect(f, x0, tol=1e-6, max_iter=100, epsilon=1e-6):
     """
     Newton's method to find the root of a vectorial function.
 
@@ -140,7 +140,7 @@ def newton_method_vect(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
         x0 (np.ndarray): Initial guess for the root.
         tol (float, optional): Tolerance for stopping criterion (default: 1e-6).
         max_iter (int, optional): Maximum number of iterations (default: 100).
-        eps (float, optional): Perturbation to apply when computing gradient
+        epsilon (float, optional): Perturbation to apply when computing gradient
             (default: 1e-6).
 
     Returns:
@@ -149,22 +149,54 @@ def newton_method_vect(f, x0, tol=1e-6, max_iter=100, eps=1e-6):
     """
     x = x0
     num_vars = len(x)
-    grad_fx = np.zeros(x.shape)
+    grad_fx = np.zeros([x.shape[0], x.shape[0]])
 
     for iter in range(max_iter):
         fx = f(x)
 
         # Compute the gradient (derivative) of f at x
         for ii in range(num_vars):
-            x_eps = x.copy()
-            x_eps[ii] += eps
+            eps = np.zeros(x.shape)
+            eps[ii] = epsilon
 
-            grad_fx[ii] = (f(x_eps) - fx) / eps
+            fx_eps = f(x + eps)
+            grad_fx[ii] = (fx_eps - fx) / epsilon
 
         if np.all(np.abs(fx) < tol):
             return x, iter
 
+        # Remove zero rows and columns from grad_fx
+        reduced_grad_fx, removed_rows, removed_cols = remove_zero_rows_columns(grad_fx)
+
+        # Remove the corresponding elements from fx
+        reduced_fx = np.delete(fx, removed_cols)
+
         # Use the gradient to update x
-        x = x - solve_linear_system_with_lu_decomposition(np.diag(grad_fx), fx)
+        dx = solve_linear_system_with_lu_decomposition(reduced_grad_fx, reduced_fx)
+        jj = 0
+        for ii in range(x.size):
+            if ii not in removed_rows:
+                x[ii] = x[ii] - dx[jj]
+                jj += 1
 
     raise Exception("Newton's method did not converge within max iterations")
+
+
+def remove_zero_rows_columns(matrix):
+    """
+    Remove zero rows and columns from a given matrix.
+
+    Parameters:
+        matrix (np.ndarray): The input matrix from which to remove zero rows and columns.
+
+    Returns:
+        reduced_matrix (np.ndarray): The matrix with zero rows and columns removed.
+        removed_rows (np.ndarray): Indices of the removed rows.
+        removed_columns (np.ndarray): Indices of the removed columns.
+    """
+    non_zero_rows = np.any(matrix != 0, axis=1)
+    non_zero_columns = np.any(matrix != 0, axis=0)
+    reduced_matrix = matrix[non_zero_rows][:, non_zero_columns]
+    removed_rows = np.where(~non_zero_rows)[0]
+    removed_columns = np.where(~non_zero_columns)[0]
+    return reduced_matrix, removed_rows, removed_columns
