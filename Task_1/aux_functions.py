@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def rk4(f, t0, y0, h):
+def rk4(f, t0, y0, h, params):
     """
     Apply the Runge-Kutta method of order 4 to solve a first-order ordinary
     differential equation of the form dy/dt = f(t, y).
@@ -12,15 +12,16 @@ def rk4(f, t0, y0, h):
         t0 (float): The initial time.
         y0 (numpy.ndarray): The initial value of y at time t0.
         h (float): The step size.
+        params (struct): Used to pass params to the ODE which is being propagated.
 
     Returns:
         t_next (float): The updated time
         y_next (numpy.ndarray): The next value of y.
     """
-    k1 = h * f(t0, y0)
-    k2 = h * f(t0 + 0.5 * h, y0 + 0.5 * k1)
-    k3 = h * f(t0 + 0.5 * h, y0 + 0.5 * k2)
-    k4 = h * f(t0 + h, y0 + k3)
+    k1 = h * f(t0, y0, params)
+    k2 = h * f(t0 + 0.5 * h, y0 + 0.5 * k1, params)
+    k3 = h * f(t0 + 0.5 * h, y0 + 0.5 * k2, params)
+    k4 = h * f(t0 + h, y0 + k3, params)
 
     y_next = y0 + (1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
     t_next = t0 + h

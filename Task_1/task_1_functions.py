@@ -2,7 +2,7 @@ import numpy as np
 from aux_functions import rk4, newton_method, newton_method_vect
 
 
-def beam_momentum_ode(x, y):
+def beam_momentum_ode(x, y, params):
     """
     Right hand side of the ODE representing the momentum of a variable stiffness beam compressed
     by a longitudinal force under a transversal distributed load: y'' = -(1+x^2) y - 1
@@ -10,6 +10,8 @@ def beam_momentum_ode(x, y):
     Args:
         x (float): Independent variable of the equation.
         y (numpy.ndarray): Dependent variable and successive derivatives: y = [y, y', y'', ...].
+        params (struct): Structure with params of the ODE (not used in this case, but kept for
+                         standard convention).
 
     Returns:
         y_dot (numpy.ndarray): Derivative of the second input: y_dot = [y', y'', y''', ...].
@@ -63,7 +65,7 @@ def r_beam(x):
     return -np.ones(x.shape)
 
 
-def shooting_method(f, x_bc, y_bc, is_bc, n):
+def shooting_method(f, x_bc, y_bc, is_bc, n, params):
     """
     Shooting method for solving boundary condition ODE. Requires:
         - A propagator, in this case order 4 Runge-Kutta (rk4) will be used
@@ -76,6 +78,7 @@ def shooting_method(f, x_bc, y_bc, is_bc, n):
         is_bc (numpy.ndarray, boolean): Whether corresponding values from the previous
                                         input are actually fixed or not.
         n (int): Number of steps to divide each subinterval.
+        params (struct): Used to pass params to the ODE which is being propagated.
 
     Returns:
         y0 (numpy.ndarray): Initial condition which is equivalent to the given BCs.
@@ -103,7 +106,7 @@ def shooting_method(f, x_bc, y_bc, is_bc, n):
         x[0] = x0
         y[0] = y_ic
         for jj in range(n):
-            x[jj + 1], y[jj + 1] = rk4(f, x[jj], y[jj], h)
+            x[jj + 1], y[jj + 1] = rk4(f, x[jj], y[jj], h, params)
 
         # Check difference in the boundary condition
         diff = 0
@@ -127,7 +130,7 @@ def shooting_method(f, x_bc, y_bc, is_bc, n):
     x_out[0] = x0
     y_out[0] = y0
     for ii in range(n):
-        x_out[ii+1], y_out[ii+1] = rk4(f, x_out[ii], y_out[ii], h)
+        x_out[ii+1], y_out[ii+1] = rk4(f, x_out[ii], y_out[ii], h, params)
 
     return y0, x_out, y_out
 

@@ -17,8 +17,9 @@ x_bc = np.array([-1, 1])
 y_bc = np.array([[0, 0], [0, 0]])
 is_bc = np.array([[True, True], [False, False]])
 N = 100
+params = []
 
-y0, x, y = shooting_method(beam_momentum_ode, x_bc, y_bc, is_bc, N)
+y0, x, y = shooting_method(beam_momentum_ode, x_bc, y_bc, is_bc, N, params)
 
 print(f'Initial condition: {y0}')
 y_plot = y[:, 0]
