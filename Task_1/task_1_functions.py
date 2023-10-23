@@ -93,7 +93,7 @@ def r_beam(x):
     return -np.ones(x.shape)
 
 
-def shooting_method(f, x_bc, y_bc, is_bc, n, params):
+def shooting_method(f, x_bc, y_bc, is_bc, n, params, tol=1e-6):
     """
     Shooting method for solving boundary condition ODE. Requires:
         - A propagator, in this case order 4 Runge-Kutta (rk4) will be used
@@ -107,6 +107,8 @@ def shooting_method(f, x_bc, y_bc, is_bc, n, params):
                                         input are actually fixed or not.
         n (int): Number of steps to divide each subinterval.
         params (dict): Used to pass params to the ODE which is being propagated.
+        tol (float, optional): Tolerance for stopping criterion at Newton method
+                               (default: 1e-6).
 
     Returns:
         y0 (numpy.ndarray): Initial condition which is equivalent to the given BCs.
@@ -147,9 +149,9 @@ def shooting_method(f, x_bc, y_bc, is_bc, n, params):
     # Find the roots of the shooting function, that is, the initial condition
     # which makes the final state match the boundary condition
     if len(is_bc[:, 0]) > 1:
-        y0_root, niter = newton_method_vect(shooting_function, y0)
+        y0_root, niter = newton_method_vect(shooting_function, y0, tol=tol)
     else:
-        y0_root, niter = newton_method(shooting_function, y0)
+        y0_root, niter = newton_method(shooting_function, y0, tol=tol)
     y0 = y0_root
 
     # Propagate the equation with that initial condition using Runge-Kutta method
@@ -188,11 +190,11 @@ def finite_diff_order2(p, q, r, x_bc, y_bc, n):
     # Generate the matrix a
     a = np.zeros([n - 1, n - 1])
     for ii in range(n - 1):
-        a[ii, ii] = 2 + h ** 2 * q(x[ii])
+        a[ii, ii] = 2 + h ** 2 * q(x[ii+1])
         if ii > 0:
-            a[ii, ii - 1] = -1 - h / 2 * p(x[ii])
+            a[ii, ii - 1] = -1 - h / 2 * p(x[ii+1])
         if ii < n-2:
-            a[ii, ii + 1] = -1 + h / 2 * p(x[ii])
+            a[ii, ii + 1] = -1 + h / 2 * p(x[ii+1])
 
     # Generate the vector b
     b = -h**2 * r(x[1:-1])
