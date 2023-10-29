@@ -14,11 +14,11 @@ if not os.path.exists('./Figures/'):
     os.makedirs('./Figures/')
 
 # Specify the blocks to be run
-shooting_ref = True
-finite_diff_ref = True
-difference_btw_refs = True
-shooting_convergence = True
-finite_diff_convergence = True
+shooting_ref = False
+finite_diff_ref = False
+difference_btw_refs = False
+shooting_convergence = False
+finite_diff_convergence = False
 shooting_deform = True
 
 # REFERENCE FOR METHODS
@@ -429,24 +429,30 @@ if shooting_deform:
     x_bc = np.array([-1., 1.])
     y_bc = np.array([[0., 0.], [0., 0.], [0., 0.], [0., 0.]])
     is_bc = np.array([[True, True], [False, False], [True, True], [False, False]])
-    N = 5000
+    N = 1000
     factor_list = [0.1, 0.5, 1, 1.1, 1.15]
+    y_list = []
+    v_list = []
 
     for lf in factor_list:
         params = {
             'load_factor': lf
         }
 
+        print(f'   -> Load factor: p_0 * L / P = {params["load_factor"]}')
         t_init = time.time()
-        y0, x, y = shooting_method(beam_momentum_and_deformation_ode, x_bc, y_bc, is_bc, 2*N, params)
+        try:
+            y0, x, y = shooting_method(beam_momentum_and_deformation_ode, x_bc, y_bc, is_bc, 2*N, params, tol=1e-12)
+        except:
+            y0, x, y = shooting_method(beam_momentum_and_deformation_ode, x_bc, y_bc, is_bc, 2*N, params)
+            print('      Tolerance increased to 1e-6')
         t_exe = time.time() - t_init
 
-        print(f'   -> Load factor: p_0 * L / P = {params["load_factor"]}')
         print(f'      Initial condition: {y0}')
         print(f'      Maximum momentum at the beam: M_max = {np.max(np.abs(y[:, 0]))}'
               f' * p_0 * L^2 (y_max = {np.max(np.abs(y[:, 0]))})')
         print(f'      Maximum deformation at the beam: w_max = {np.max(np.abs(y[:, 2]))}'
-              f' * L (y_max = {np.max(np.abs(y[:, 2]))})')
+              f' * L (v_max = {np.max(np.abs(y[:, 2]))})')
         print(f'      Computing time: {t_exe} s')
         plt.figure()
         y_plot = y[:, 0]
@@ -456,16 +462,42 @@ if shooting_deform:
         plt.xlim(min(x), max(x))
         plt.ylim(min(y_plot)*1.1 - 0.1, max(y_plot)*1.1 + 0.1)
         plt.grid(which='both')
-        plt.savefig(f'./Figures/test_shooting_lf_{params["load_factor"]}_N_{N}_momentum.png', bbox_inches='tight')
+        plt.savefig(f'./Figures/test_shooting_lf_{lf}_N_{N}_momentum.png', bbox_inches='tight')
         plt.close()
+        y_list.append(y_plot)
 
         plt.figure()
-        y_plot = y[:, 2]
-        plt.plot(x, y_plot, label=f'LF={lf}')
+        v_plot = y[:, 2]
+        plt.plot(x, v_plot, label=f'LF={lf}')
         plt.xlabel('$ x=\\xi/L $', fontsize=14)
-        plt.ylabel('$ y=w/L $', fontsize=14)
+        plt.ylabel('$ v=w/L $', fontsize=14)
         plt.xlim(min(x), max(x))
-        plt.ylim(min(y_plot)*1.1 - 0.1, max(y_plot)*1.1 + 0.1)
+        plt.ylim(min(v_plot)*1.1 - 0.1, max(v_plot)*1.1 + 0.1)
         plt.grid(which='both')
-        plt.savefig(f'./Figures/test_shooting_lf_{params["load_factor"]}_N_{N}_deformation.png', bbox_inches='tight')
+        plt.savefig(f'./Figures/test_shooting_lf_{lf}_N_{N}_deformation.png', bbox_inches='tight')
         plt.close()
+        v_list.append(v_plot)
+
+    plt.figure()
+    for ii, lf in enumerate(factor_list):
+        plt.plot(x, y_list[ii], label=f'LF={lf}')
+    plt.xlabel('$ x=\\xi/L $', fontsize=14)
+    plt.ylabel('$ y=M/(p_0 L^2) $', fontsize=14)
+    plt.xlim(min(x), max(x))
+    plt.ylim(min(y_list[-1])*1.1 - 0.1, max(y_list[-1])*1.1 + 0.1)
+    plt.grid(which='both')
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.savefig(f'./Figures/test_shooting_lf_all_N_{N}_momentum.png', bbox_inches='tight')
+    plt.close()
+
+    plt.figure()
+    for ii, lf in enumerate(factor_list):
+        plt.plot(x, v_list[ii], label=f'LF={lf}')
+    plt.xlabel('$ x=\\xi/L $', fontsize=14)
+    plt.ylabel('$ v=w/L $', fontsize=14)
+    plt.xlim(min(x), max(x))
+    plt.ylim(min(v_list[-1])*1.1 - 0.1, max(v_list[-1])*1.1 + 0.1)
+    plt.grid(which='both')
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.savefig(f'./Figures/test_shooting_lf_all_N_{N}_deformation.png', bbox_inches='tight')
+    plt.close()
