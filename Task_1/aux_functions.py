@@ -6,7 +6,7 @@ def rk4(f, t0, y0, h, params):
     Apply the Runge-Kutta method of order 4 to solve a first-order ordinary
     differential equation of the form dy/dt = f(t, y).
 
-    Parameters:
+    Args:
         f (function): The function representing the differential equation.
             It should take two arguments: t (current time) and y (current value).
         t0 (float): The initial time.
@@ -33,7 +33,7 @@ def newton_method(f, x0, tol=1e-6, max_iter=100, epsilon=1e-6):
     """
     Newton's method to find the root of a function.
 
-    Parameters:
+    Args:
         f (function): The target function for which you want to find the root.
         x0 (float): Initial guess for the root.
         tol (float, optional): Tolerance for stopping criterion (default: 1e-6).
@@ -135,7 +135,7 @@ def newton_method_vect(f, x0, tol=1e-6, max_iter=100, epsilon=1e-6):
     """
     Newton's method to find the root of a vectorial function.
 
-    Parameters:
+    Args:
         f (function): The target function for which you want to find the root.
         x0 (np.ndarray): Initial guess for the root.
         tol (float, optional): Tolerance for stopping criterion (default: 1e-6).
@@ -186,7 +186,7 @@ def remove_zero_rows_columns(matrix):
     """
     Remove zero rows and columns from a given matrix.
 
-    Parameters:
+    Args:
         matrix (np.ndarray): The input matrix from which to remove zero rows and columns.
 
     Returns:
