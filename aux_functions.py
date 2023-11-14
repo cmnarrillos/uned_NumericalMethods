@@ -200,3 +200,16 @@ def remove_zero_rows_columns(matrix):
     removed_rows = np.where(~non_zero_rows)[0]
     removed_columns = np.where(~non_zero_columns)[0]
     return reduced_matrix, removed_rows, removed_columns
+
+
+def calculate_norm(vector):
+    """
+    Computes the norm of a given vector.
+
+    Args:
+        vector (np.ndarray): The input vector whose norm will be computed.
+
+    Returns:
+        norm (float): Norm of the vector.
+    """
+    return np.sqrt(np.sum(vector**2))
