@@ -7,7 +7,14 @@ import matplotlib.pyplot as plt
 from task_1_functions import beam_momentum_ode, shooting_method
 from task_1_functions import beam_momentum_and_deformation_ode
 from task_1_functions import p_beam, q_beam, r_beam, finite_diff_order2
-from aux_functions import solve_linear_system_with_lu_decomposition
+
+# Try to import from the current folder; if not found, import from the parent folder
+try:
+    from aux_functions import solve_linear_system_with_lu_decomposition
+except ImportError:
+    import sys
+    sys.path.append(os.path.abspath('..'))
+    from aux_functions import solve_linear_system_with_lu_decomposition
 
 
 if not os.path.exists('./Figures/'):
