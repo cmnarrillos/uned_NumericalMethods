@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 
 # Try to import from the current folder; if not found, import from the parent folder
@@ -7,6 +5,7 @@ try:
     from aux_functions import rk4, newton_method, newton_method_vect
 except ImportError:
     import sys
+    import os
     sys.path.append(os.path.abspath('..'))
     from aux_functions import rk4, newton_method, newton_method_vect
 
