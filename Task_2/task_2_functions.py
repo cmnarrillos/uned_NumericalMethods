@@ -134,7 +134,8 @@ def inverse_power_method(matrix, eigenvalue_est, initial_vector=None, tolerance=
         eigenvalue_est = np.dot(initial_vector, np.dot(matrix, initial_vector)) / np.dot(initial_vector, initial_vector)
 
         # Check for convergence
-        if np.linalg.norm(initial_vector - solve) < tolerance:
+        if calculate_norm(initial_vector - solve) < tolerance \
+                or calculate_norm(initial_vector + solve) < tolerance:
             return eigenvalue_est, solve
 
         initial_vector = solve
