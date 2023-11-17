@@ -221,21 +221,21 @@ def qr_method(matrix, tolerance=1e-6, max_iterations=1000):
 
     Raises:
         ValueError: If the matrix provided is rectangular.
-        ValueError: If the matrix provided is not tri-diagonal.
         ValueError: If the matrix provided is not symmetric.
+        Warning: If the matrix provided is not tri-diagonal.
     """
 
     # Check matrix is square
     if matrix.shape[0] != matrix.shape[1]:
         raise ValueError("Input matrix must be square")
 
-    # Check matrix is tri-diagonal
-    if not is_tri_diagonal(matrix, tolerance=1e-9):
-        raise ValueError("Input matrix must be tri-diagonal")
-
     # Check matrix is symmetric
     if (abs(matrix - matrix.T) > tolerance).any():
         raise ValueError("Input matrix must be symmetric")
+
+    # Check matrix is tri-diagonal
+    if not is_tri_diagonal(matrix, tolerance=1e-9):
+        warnings.warn("Input matrix is not tri-diagonal", Warning)
 
     # Get size of matrix
     n = matrix.shape[0]
