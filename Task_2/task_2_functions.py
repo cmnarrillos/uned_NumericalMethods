@@ -235,7 +235,7 @@ def qr_method(matrix, tolerance=1e-6, max_iterations=1000):
 
     # Check matrix is tri-diagonal
     if not is_tri_diagonal(matrix, tolerance=1e-9):
-        warnings.warn("Input matrix is not tri-diagonal", Warning)
+        raise ValueError("Input matrix must be tri-diagonal")
 
     # Get size of matrix
     n = matrix.shape[0]
@@ -257,14 +257,14 @@ def qr_method(matrix, tolerance=1e-6, max_iterations=1000):
             reduced_matrix = matrix[1:, 1:]
             eigenvalues_list = qr_method(reduced_matrix, tolerance=tolerance, max_iterations=max_iterations-iteration)
             eigenvalues_list.append(matrix[0, 0])
-            return eigenvalues_list
+            return sorted(eigenvalues_list)
 
         # - Last eigenvalue
         if abs(matrix[n-2, n-1]) < tolerance:
             reduced_matrix = matrix[:n-1, :n-1]
             eigenvalues_list = qr_method(reduced_matrix, tolerance=tolerance, max_iterations=max_iterations-iteration)
             eigenvalues_list.append(matrix[n-1, n-1])
-            return eigenvalues_list
+            return sorted(eigenvalues_list)
 
         # Divide in 2 tri-diagonal matrices if possible
         for k in range(1, n-1):
@@ -274,7 +274,7 @@ def qr_method(matrix, tolerance=1e-6, max_iterations=1000):
                 eig_val_list_1 = qr_method(matrix_1, tolerance=tolerance, max_iterations=max_iterations-iteration)
                 eig_val_list_2 = qr_method(matrix_2, tolerance=tolerance, max_iterations=max_iterations-iteration)
                 eigenvalues_list = eig_val_list_1 + eig_val_list_2
-                return eigenvalues_list
+                return sorted(eigenvalues_list)
 
         # Actual method
         # - Compute rotation matrices for building Q
@@ -296,22 +296,23 @@ def qr_method(matrix, tolerance=1e-6, max_iterations=1000):
             r_matrix[k, k] = c[k]*x + s[k]*b
             r_matrix[k, k+1] = c[k]*y + s[k]*a
             if k < n-2:
-                r_matrix[k, k+2] = s[k]*b
+                r_matrix[k, k+2] = s[k]*matrix[k+1, k+2]
             # Update aux variables (x,y)
             x = c[k]*a - s[k]*y
-            y = c[k]*b
+            if k < n-2:
+                y = c[k]*matrix[k+1, k+2]
         r_matrix[n-1, n-1] = x
 
         # - Build Q from the stored info for rotation matrices
         q_matrix = np.eye(n)
         for k in range(n-1):
             rot_matrix = rotation_matrix(n, (k, k+1), c[k], -s[k])
-            q_matrix = np.dot(q_matrix, rot_matrix)
+            q_matrix = np.matmul(q_matrix, rot_matrix)
 
         # - Update matrix
-        matrix = np.dot(np.dot(q_matrix.T, matrix), q_matrix)
+        matrix = np.matmul(r_matrix, q_matrix)
 
     # If the iteration does not converge, raise a warning
     warnings.warn("QR method did not converge within the specified maximum number of iterations")
 
-    return eigenvalues_list
+    return sorted(eigenvalues_list)
