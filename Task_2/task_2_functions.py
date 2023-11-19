@@ -3,12 +3,12 @@ import warnings
 
 # Try to import from the current folder; if not found, import from the parent folder
 try:
-    from aux_functions import calculate_norm, solve_linear_system_with_lu_decomposition
+    from aux_functions import calculate_norm, lu_decomposition, lu_solve
 except ImportError:
     import sys
     import os
     sys.path.append(os.path.abspath('..'))
-    from aux_functions import calculate_norm, solve_linear_system_with_lu_decomposition
+    from aux_functions import calculate_norm, lu_decomposition, lu_solve
 
 
 def power_method(matrix, initial_vector=None, tolerance=1e-6, max_iterations=1000):
@@ -119,26 +119,28 @@ def inverse_power_method(matrix, eigenvalue_est, initial_vector=None, tolerance=
 
     # Normalize the initial vector
     initial_vector /= calculate_norm(initial_vector)
+    # Create auxiliary matrix
+    aux_matrix = matrix - eigenvalue_est * np.identity(matrix.shape[0])
+    # Perform LU decomposition
+    L, U = lu_decomposition(aux_matrix)
 
     # Inverse power method iteration
     for iteration in range(max_iterations):
-        # Create auxiliary matrix
-        aux_matrix = matrix - eigenvalue_est * np.identity(matrix.shape[0])
         # Solve the linear system using LU decomposition
-        solve = solve_linear_system_with_lu_decomposition(aux_matrix, initial_vector)
+        eigenvector_est = lu_solve(L, U, initial_vector)
 
         # Normalize the result
-        solve /= calculate_norm(solve)
+        eigenvector_est /= calculate_norm(eigenvector_est)
 
         # Update the estimation of the eigenvalue
         eigenvalue_est = np.dot(initial_vector, np.dot(matrix, initial_vector)) / np.dot(initial_vector, initial_vector)
 
         # Check for convergence
-        if calculate_norm(initial_vector - solve) < tolerance \
-                or calculate_norm(initial_vector + solve) < tolerance:
-            return eigenvalue_est, solve
+        if calculate_norm(initial_vector - eigenvector_est) < tolerance \
+                or calculate_norm(initial_vector + eigenvector_est) < tolerance:
+            return eigenvalue_est, eigenvector_est
 
-        initial_vector = solve
+        initial_vector = eigenvector_est
 
     # If the iteration does not converge, raise a warning
     warnings.warn("Inverse power method did not converge within the specified maximum number of iterations")
