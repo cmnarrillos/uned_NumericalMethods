@@ -213,3 +213,109 @@ def calculate_norm(vector):
         norm (float): Norm of the vector.
     """
     return np.sqrt(np.sum(vector**2))
+
+
+def jacobi_method(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
+    """
+    Solve a linear system Ax = b using the Jacobi iterative method.
+
+    Parameters:
+        A: Coefficient matrix (n x n)
+        b: Right-hand side vector (n x 1)
+        x0: Initial guess for the solution (default is None, which initializes to zeros)
+        max_iterations: Maximum number of iterations (default is 1000)
+        tolerance: Convergence tolerance (default is 1e-10)
+
+    Returns:
+        x: Solution vector (n x 1)
+        iterations: Number of iterations performed
+    """
+
+    n = len(b)
+    x = np.zeros_like(b) if x0 is None else x0.copy()
+
+    for iteration in range(max_iterations):
+        x_old = x.copy()  # Store the previous iteration for convergence check
+
+        for i in range(n):
+            sigma = np.dot(A[i, :i], x_old[:i]) + np.dot(A[i, i + 1:], x_old[i + 1:])
+            x[i] = (b[i] - sigma) / A[i, i]
+
+        # Check for convergence
+        residual = calculate_norm(np.dot(A, x) - b)
+        if residual < tolerance:
+            return x, iteration + 1
+
+    raise RuntimeError("Jacobi method did not converge within the specified number of iterations.")
+
+
+def gauss_seidel(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
+    """
+    Solve a linear system Ax = b using the Gauss-Seidel iterative method.
+
+    Parameters:
+        A: Coefficient matrix (n x n)
+        b: Right-hand side vector (n x 1)
+        x0: Initial guess for the solution (default is None, which initializes to zeros)
+        max_iterations: Maximum number of iterations (default is 1000)
+        tolerance: Convergence tolerance (default is 1e-10)
+
+    Returns:
+        x: Solution vector (n x 1)
+        iterations: Number of iterations performed
+    """
+
+    n = len(b)
+    x = np.zeros_like(b) if x0 is None else x0.copy()
+
+    for iteration in range(max_iterations):
+        x_old = x.copy()  # Store the previous iteration for convergence check
+
+        for i in range(n):
+            sigma_forward = np.dot(A[i, :i], x[:i])
+            sigma_backward = np.dot(A[i, i + 1:], x_old[i + 1:])
+            x[i] = (b[i] - sigma_forward - sigma_backward) / A[i, i]
+
+        # Check for convergence
+        residual = calculate_norm(np.dot(A, x) - b)
+        if residual < tolerance:
+            return x, iteration + 1
+
+    raise RuntimeError("Gauss-Seidel method did not converge within the specified number of iterations.")
+
+
+def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
+    """
+    Solve a linear system Ax = b using the Successive Over-Relaxation (SOR) iterative method.
+
+    Parameters:
+    - A: Coefficient matrix (n x n)
+    - b: Right-hand side vector (n x 1)
+    - w: Relaxation parameter (0 < w < 2 for convergence)
+    - x0: Initial guess for the solution (default is None, which initializes to zeros)
+    - max_iterations: Maximum number of iterations (default is 1000)
+    - tolerance: Convergence tolerance (default is 1e-10)
+
+    Returns:
+    - x: Solution vector (n x 1)
+    - iterations: Number of iterations performed
+    """
+
+    n = len(b)
+    x = np.zeros_like(b) if x0 is None else x0.copy()
+
+    for iteration in range(max_iterations):
+        x_old = x.copy()  # Store the previous iteration for convergence check
+
+        for i in range(n):
+            sigma_forward = np.dot(A[i, :i], x[:i])
+            sigma_backward = np.dot(A[i, i + 1:], x_old[i + 1:])
+            x[i] = (1 - w) * x_old[i] + (w / A[i, i]) * (b[i] - sigma_forward - sigma_backward)
+
+        # Check for convergence
+        residual = np.linalg.norm(A @ x - b)
+        if residual < tolerance:
+            return x, iteration + 1
+
+    raise RuntimeError("SOR method did not converge within the specified number of iterations.")
+
