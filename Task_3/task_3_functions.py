@@ -1,4 +1,5 @@
 import numpy as np
+from datetime import datetime
 import warnings
 
 # Try to import from the current folder; if not found, import from the parent folder
@@ -90,3 +91,91 @@ def polar_laplace_eq_df_system(n, m, r_range, th_range, bcs):
                 matrix[index, index+1] = c
 
     return matrix, vector
+
+
+def document_test_polar(filename, solution, info='', latex_shape=None, analytical_sol=None, n_terms=None):
+    """
+    Document result obtained
+
+    Args:
+        filename (str): Name of the file to be created
+        solution (np.ndarray): Matrix with values at nodes
+        latex_shape (tuple): Size of the table to be put in LaTeX
+        info (str): Information to be included in the doc file after preamble
+        analytical_sol (np.ndarray): Reference solution used to compute error
+        n_terms (int): Number of terms of the Fourier series used for computing the analytical solution
+
+    Returns:
+        None
+
+    Creates file with formatted documentation
+    """
+    n = solution.shape[0] - 1
+    m = solution.shape[1] - 1
+
+    with open(filename, 'w') as f:
+        # Write preamble + additional info
+        f.write(f'Test run on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n\n')
+        f.write(info + '\n\n\n')
+
+        # Write the solution array in the file
+        for row in solution:
+            formatted_row = ' ' + ', '.join([f'{value:12.10f}' for value in row])
+            f.write(formatted_row + '\n')
+
+        # If latex_shape is provided and those points are matched, writhe the tabular expression for LaTeX
+        if latex_shape is not None:
+            if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
+                f.write('\n\n\n')
+                f.write('Table for LaTeX:\n')
+                f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                f.write('\hline\n')
+                for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
+                    row = solution[i]
+                    elems = row[m // (latex_shape[1] + 1):-2:m // (latex_shape[1] + 1)]
+                    formatted_row = ' & '.join([f'{value:12.10f}' for value in elems])
+                    f.write(formatted_row + '\\\\\hline\n')
+                f.write('\hline\n')
+                f.write('\\end{tabular}\n')
+            f.write('\n\n\n')
+
+        # If analytical solution is provided, try to compute error and document it
+        if analytical_sol is not None:
+            if solution.shape == analytical_sol.shape:
+                f.write(f'Error wrt analytical solution obtained with {n_terms} terms (error ~O(1/N)~'
+                        f'{1 / (n_terms - 1)}\n')
+                for row in solution - analytical_sol:
+                    formatted_row = ' ' + ', '.join([f'{value:+12.10f}' for value in row])
+                    f.write(formatted_row + '\n')
+
+                if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
+                    f.write('\n\n\n')
+                    f.write('Table for LaTeX:\n')
+                    f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                    f.write('\hline\n')
+                    for i in range(n // 3, solution.shape[0] - 1, n // 3):
+                        row = solution[i] - analytical_sol[i]
+                        elems = row[m // 6:-2:m // 6]
+                        formatted_row = ' & '.join([f'{value:12.10f}' for value in elems])
+                        f.write(formatted_row + '\\\\\hline\n')
+                    f.write('\hline\n')
+                    f.write('\\end{tabular}\n')
+
+            elif (analytical_sol.shape[0] == latex_shape[0] + 2) & (analytical_sol.shape[1] == latex_shape[1] + 2):
+                if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
+                    f.write(f'Error wrt analytical solution obtained with {n_terms} terms (error ~O(1/N)~'
+                            f'{1 / (n_terms - 1)}\n')
+                    f.write('\n\n\n')
+                    f.write('Table for LaTeX:\n')
+                    f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                    f.write('\hline\n')
+                    ii = 0
+                    for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
+                        ii += 1
+                        row = solution[i]
+                        elems = row[::m // (latex_shape[1] + 1)] - analytical_sol[ii]
+                        formatted_row = ' & '.join([f'{value:12.10f}' for value in elems[1:-1]])
+                        f.write(formatted_row + '\\\\\hline\n')
+                    f.write('\hline\n')
+                    f.write('\\end{tabular}\n')
+
