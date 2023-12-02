@@ -128,7 +128,7 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
             if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
                 f.write('\n\n\n')
                 f.write('Table for LaTeX:\n')
-                f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
                 f.write('\hline\n')
                 for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
                     row = solution[i]
@@ -151,7 +151,7 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                 if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
                     f.write('\n\n\n')
                     f.write('Table for LaTeX:\n')
-                    f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                    f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
                     f.write('\hline\n')
                     for i in range(n // 3, solution.shape[0] - 1, n // 3):
                         row = solution[i] - analytical_sol[i]
@@ -167,7 +167,7 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                             f'{1 / (n_terms - 1)}\n')
                     f.write('\n\n\n')
                     f.write('Table for LaTeX:\n')
-                    f.write('\\begin{tabular}{|c|c|c|c|c|}\n')
+                    f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
                     f.write('\hline\n')
                     ii = 0
                     for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):

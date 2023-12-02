@@ -54,8 +54,8 @@ document_test_polar(filename=filename, solution=analytical_sol, info=info, latex
 
 # Get the linear system representing the edp in polar coordinates
 print('Initializing polar finite differences system')
-N = 30
-M = 60
+N = 6
+M = 12
 A, b = polar_laplace_eq_df_system(N, M, rho_range, theta_range, boundary_conditions)
 
 
@@ -92,7 +92,7 @@ print('Solving the system using Jacobi method')
 tinit = time.time()
 
 try:
-    x, niter = jacobi_method(A, b)
+    x, niter = jacobi_method(A, b, max_iterations=1000000, tolerance=1e-5)
     print(f' execution time: {time.time()-tinit} s')
     print(f' Converged after {niter} iterations')
     print()
@@ -125,7 +125,7 @@ print('Solving the system using Gauss-Seidel method')
 tinit = time.time()
 
 try:
-    x, niter = gauss_seidel(A, b)
+    x, niter = gauss_seidel(A, b, max_iterations=1000000, tolerance=1e-5)
     print(f' execution time: {time.time()-tinit} s')
     print(f' Converged after {niter} iterations')
     print()
@@ -159,7 +159,7 @@ print('Solving the system using Succesive Over-Relaxation method')
 tinit = time.time()
 
 try:
-    x, niter = sor_method(A, b, w=1.25)
+    x, niter = sor_method(A, b, w=1.25, max_iterations=1000000, tolerance=1e-5)
     print(f' execution time: {time.time()-tinit} s')
     print(f' Converged after {niter} iterations')
     print()
