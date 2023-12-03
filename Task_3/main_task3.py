@@ -29,7 +29,7 @@ theta_range = (0, np.pi)
 boundary_conditions = [0, 1, 0, 0]
 N_Fourier = 100001
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]#, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 # Initialize lists to store general vars
 lu_texe = []
@@ -254,3 +254,45 @@ for n_subint in subintervals:
         # Handle the exception (e.g., print an error message)
         print(f"Error: {e}")
         print()
+
+
+# Plot general stats
+# Execution time
+plt.figure()
+plt.semilogy(jacobi_nsubint, jacobi_texe, label='Jacobi')
+plt.semilogy(gs_nsubint, gs_texe, label='Gauss-Seidel')
+plt.semilogy(sor_nsubint, sor_texe, label=f'SOR (w={w})')
+plt.semilogy(subintervals, lu_texe, label='LU')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('$t_{exe}$ [s]', fontsize=18)
+plt.legend(fontsize=14)
+plt.xlim((subintervals[0], subintervals[-1]))
+plt.savefig(f'./Figures/texe.png', bbox_inches='tight')
+
+
+# Niter
+plt.figure()
+plt.semilogy(jacobi_nsubint, jacobi_niter, label='Jacobi')
+plt.semilogy(gs_nsubint, gs_niter, label='Gauss-Seidel')
+plt.semilogy(sor_nsubint, sor_niter, label=f'SOR (w={w})')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('# of iterations', fontsize=18)
+plt.legend(fontsize=14)
+plt.xlim((subintervals[0], subintervals[-1]))
+plt.savefig(f'./Figures/niter.png', bbox_inches='tight')
+
+
+# Max error
+plt.figure()
+plt.semilogy(jacobi_nsubint, jacobi_maxerr, label='Jacobi')
+plt.semilogy(gs_nsubint, gs_maxerr, label='Gauss-Seidel')
+plt.semilogy(sor_nsubint, sor_maxerr, label=f'SOR (w={w})')
+plt.semilogy(subintervals, lu_maxerr, label='LU')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('$max(\\varepsilon)$', fontsize=18)
+plt.legend(fontsize=14)
+plt.xlim((subintervals[0], subintervals[-1]))
+plt.savefig(f'./Figures/error.png', bbox_inches='tight')
