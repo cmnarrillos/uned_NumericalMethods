@@ -105,17 +105,17 @@ def get_error_diff_grids(solution, analytical_sol, aim_shape):
         error (np.ndarray): Matrix with errors at points of the aim_shape grid
     """
 
-    if (not solution.shape[0] % aim_shape[0]) & (not analytical_sol.shape[0] % aim_shape[0]) & \
-            (not solution.shape[1] % aim_shape[1]) & (not analytical_sol.shape[1] % aim_shape[1]):
-        raise ValueError("Input matrices cannot match aim shape")
-    else:
-        step_sol_0 = solution.shape[0] // aim_shape[0]
-        step_sol_1 = solution.shape[1] // aim_shape[1]
-        step_analytical_sol_0 = analytical_sol.shape[0] // aim_shape[0]
-        step_analytical_sol_1 = analytical_sol.shape[1] // aim_shape[1]
+    if (not (solution.shape[0]-1) % (aim_shape[0]-1)) & (not (analytical_sol.shape[0]-1) % (aim_shape[0]-1)) & \
+            (not (solution.shape[1]-1) % (aim_shape[1]-1)) & (not (analytical_sol.shape[1]-1) % (aim_shape[1]-1)):
+        step_sol_0 = (solution.shape[0] - 1) // (aim_shape[0] - 1)
+        step_sol_1 = (solution.shape[1] - 1) // (aim_shape[1] - 1)
+        step_analytical_sol_0 = (analytical_sol.shape[0] - 1) // (aim_shape[0] - 1)
+        step_analytical_sol_1 = (analytical_sol.shape[1] - 1) // (aim_shape[1] - 1)
         error = solution[::step_sol_0, ::step_sol_1] - analytical_sol[::step_analytical_sol_0, ::step_analytical_sol_1]
 
         return error
+    else:
+        raise ValueError("Input matrices cannot match aim shape")
 
 
 def document_test_polar(filename, solution, info='', latex_shape=None, analytical_sol=None, n_terms=None):
@@ -150,14 +150,14 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
 
         # If latex_shape is provided and those points are matched, writhe the tabular expression for LaTeX
         if latex_shape is not None:
-            if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
+            if (not (n - 1) % (latex_shape[0])) & (not (m - 1) % (latex_shape[1])):
                 f.write('\n\n\n')
                 f.write('Table for LaTeX:\n')
-                f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
+                f.write('\\begin{tabular}{|' + '|'.join(['c'] * (latex_shape[1]-1)) + '|}\n')
                 f.write('\hline\n')
-                for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
+                for i in range((n - 1) // (latex_shape[0]), solution.shape[0] - 1, (n - 1) // (latex_shape[0])):
                     row = solution[i]
-                    elems = row[m // (latex_shape[1] + 1):-1:m // (latex_shape[1] + 1)]
+                    elems = row[(m - 1) // (latex_shape[1]):-1:(m - 1) // (latex_shape[1])]
                     formatted_row = ' & '.join([f'{value:12.10f}' for value in elems])
                     f.write(formatted_row + '\\\\\hline\n')
                 f.write('\hline\n')
@@ -186,20 +186,20 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                     f.write('\hline\n')
                     f.write('\\end{tabular}\n')
 
-            elif (analytical_sol.shape[0] == latex_shape[0] + 2) & (analytical_sol.shape[1] == latex_shape[1] + 2):
-                if (not n % (latex_shape[0] + 1)) & (not m % (latex_shape[1] + 1)):
-                    f.write(f'Error wrt analytical solution obtained with {n_terms} terms (error ~O(1/N)~'
-                            f'{1 / (n_terms - 1)}\n')
-                    f.write('\n\n\n')
-                    f.write('Table for LaTeX:\n')
-                    f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
-                    f.write('\hline\n')
-                    error = get_error_diff_grids(solution=solution, analytical_sol=analytical_sol,
-                                                 aim_shape=(latex_shape[0]+1, latex_shape[1]+1))
-                    for i in range(1, error.shape[0] - 1):
-                        row = error[i]
-                        formatted_row = ' & '.join([f'{value:12.10f}' for value in row[1:-1]])
-                        f.write(formatted_row + '\\\\\hline\n')
-                    f.write('\hline\n')
-                    f.write('\\end{tabular}\n')
+            elif (not (analytical_sol.shape[0]-1) % latex_shape[0]) & (not (n-1) % latex_shape[0]) & \
+                    (not (analytical_sol.shape[1]-1) % latex_shape[1]) & (not (m-1) % latex_shape[1]):
+                f.write(f'Error wrt analytical solution obtained with {n_terms} terms (error ~O(1/N)~'
+                        f'{1 / (n_terms - 1)}\n')
+                f.write('\n\n\n')
+                f.write('Table for LaTeX:\n')
+                f.write('\\begin{tabular}{|' + '|'.join(['c'] * (latex_shape[1]-1)) + '|}\n')
+                f.write('\hline\n')
+                error = get_error_diff_grids(solution=solution, analytical_sol=analytical_sol,
+                                             aim_shape=(latex_shape[0]+1, latex_shape[1]+1))
+                for i in range(1, error.shape[0] - 1):
+                    row = error[i]
+                    formatted_row = ' & '.join([f'{value:12.10f}' for value in row[1:-1]])
+                    f.write(formatted_row + '\\\\\hline\n')
+                f.write('\hline\n')
+                f.write('\\end{tabular}\n')
 
