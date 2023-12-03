@@ -289,16 +289,16 @@ def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
     Solve a linear system Ax = b using the Successive Over-Relaxation (SOR) iterative method.
 
     Parameters:
-    - A: Coefficient matrix (n x n)
-    - b: Right-hand side vector (n x 1)
-    - w: Relaxation parameter (0 < w < 2 for convergence)
-    - x0: Initial guess for the solution (default is None, which initializes to zeros)
-    - max_iterations: Maximum number of iterations (default is 1000)
-    - tolerance: Convergence tolerance (default is 1e-10)
+        A: Coefficient matrix (n x n)
+        b: Right-hand side vector (n x 1)
+        w: Relaxation parameter (0 < w < 2 for convergence)
+        x0: Initial guess for the solution (default is None, which initializes to zeros)
+        max_iterations: Maximum number of iterations (default is 1000)
+        tolerance: Convergence tolerance (default is 1e-10)
 
     Returns:
-    - x: Solution vector (n x 1)
-    - iterations: Number of iterations performed
+        x: Solution vector (n x 1)
+        iterations: Number of iterations performed
     """
 
     n = len(b)
