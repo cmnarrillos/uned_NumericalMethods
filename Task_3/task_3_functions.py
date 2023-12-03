@@ -4,12 +4,12 @@ import warnings
 
 # Try to import from the current folder; if not found, import from the parent folder
 try:
-    from aux_functions import calculate_norm, lu_decomposition, lu_solve
+    from aux_functions import calculate_norm, lu_decomposition, lu_solve, inverse_lower_triangular
 except ImportError:
     import sys
     import os
     sys.path.append(os.path.abspath('..'))
-    from aux_functions import calculate_norm, lu_decomposition, lu_solve
+    from aux_functions import calculate_norm, lu_decomposition, lu_solve, inverse_lower_triangular
 
 
 def fourier_series_analytical_sol(rho, theta, n_terms=100):
@@ -91,6 +91,71 @@ def polar_laplace_eq_df_system(n, m, r_range, th_range, bcs):
                 matrix[index, index+1] = c
 
     return matrix, vector
+
+
+def jacobi_matrix(A):
+    """
+    Function returning the iterative matrix applied when using Jacobi iterative formula
+    Args:
+        A (np.ndarray): matrix
+
+    Returns:
+        H (np.ndarray): matrix of the formula x(n+1) = H*x(n) + B*b
+    """
+    # Step 1: Compute matrices D, L, and U
+    D_inv = np.diag(1/np.diag(A))
+    L = np.tril(A, k=-1)
+    U = np.triu(A, k=1)
+
+    H = np.matmul(D_inv, (L + U))
+
+    return H
+
+
+def gs_matrix(A):
+    """
+    Function returning the iterative matrix applied when using Jacobi iterative formula
+    Args:
+        A (np.ndarray): matrix
+
+    Returns:
+        H (np.ndarray): matrix of the formula x(n+1) = H*x(n) + B*b
+    """
+    # Step 1: Compute matrices D, L, and U
+    D = np.diag(np.diag(A))
+    L = np.tril(A, k=-1)
+    U = np.triu(A, k=1)
+
+    H = np.matmul(inverse_lower_triangular(D - L), U)
+
+    return H
+
+
+def sor_matrix(A, w):
+    """
+    Function returning the iterative matrix applied when using SOR iterative formula
+    Args:
+        A (np.ndarray): matrix
+        w (float): relaxation param
+
+    Returns:
+        H (np.ndarray): matrix of the formula x(n+1) = H*x(n) + B*b
+    """
+    n = A.shape[0]
+
+    # Step 1: Compute matrices D, L, and U
+    D_inv = np.diag(1/np.diag(A))
+    L = np.tril(A, k=-1)
+    U = np.triu(A, k=1)
+
+    lhs = np.eye(n) - w * np.matmul(D_inv, L)
+    lhs_inv = inverse_lower_triangular(lhs)
+
+    rhs = (1 - w) * np.eye(n) + w * np.matmul(D_inv, U)
+
+    H = np.matmul(lhs_inv, rhs)
+
+    return H
 
 
 def get_error_diff_grids(solution, analytical_sol, aim_shape):

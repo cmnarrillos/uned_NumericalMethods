@@ -319,3 +319,29 @@ def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
 
     raise RuntimeError("SOR method did not converge within the specified number of iterations.")
 
+
+def inverse_lower_triangular(L):
+    """
+    Compute the inverse of a lower triangular matrix using back substitution.
+
+    Parameters:
+        L: Lower triangular matrix (n x n)
+
+    Returns:
+        L_inv: Inverse of the lower triangular matrix (n x n)
+    """
+    n = L.shape[0]
+    if L.shape[0] != L.shape[1]:
+        raise ValueError("Input matrix must be square.")
+
+    # Initialize the inverse matrix as an identity matrix
+    L_inv = np.eye(n)
+
+    for i in range(n):
+        for j in range(i):
+            L_inv[i, :] -= L_inv[j, :] * L[i, j]
+
+        # Divide the entire row by the diagonal element
+        L_inv[i, :] /= L[i, i]
+
+    return L_inv

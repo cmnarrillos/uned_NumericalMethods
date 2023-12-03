@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from task_3_functions import fourier_series_analytical_sol, polar_laplace_eq_df_system, document_test_polar, \
-                             get_error_diff_grids
+                             get_error_diff_grids, jacobi_matrix, gs_matrix, sor_matrix
 
 # Try to import from the current folder; if not found, import from the parent folder
 try:
@@ -13,6 +13,12 @@ except ImportError:
     import sys
     sys.path.append(os.path.abspath('..'))
     from aux_functions import lu_decomposition, lu_solve, jacobi_method, gauss_seidel, sor_method
+
+# Try to import from the current folder; if not found, import from the parent folder
+try:
+    from task_2_functions import power_method
+except ImportError:
+    from Task_2.task_2_functions import power_method
 
 
 if not os.path.exists('./Figures/'):
@@ -29,7 +35,7 @@ theta_range = (0, np.pi)
 boundary_conditions = [0, 1, 0, 0]
 N_Fourier = 100001
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+subintervals = [1, 2, 3]#, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
 # Initialize lists to store general vars
 lu_texe = []
@@ -125,6 +131,9 @@ for n_subint in subintervals:
 
     # Solve the system using Jacobi iterative method
     print('Solving the system using Jacobi method')
+    H = jacobi_matrix(A)
+    eigval, eigvec = power_method(H)
+    print(f' maximum eigenvalue associated to Jacobi method: {eigval}')
     tinit = time.time()
 
     try:
@@ -168,6 +177,9 @@ for n_subint in subintervals:
 
     # Solve the system using Gauss-Seidel iterative method
     print('Solving the system using Gauss-Seidel method')
+    H = gs_matrix(A)
+    eigval, eigvec = power_method(H)
+    print(f' maximum eigenvalue associated to Gauss-Seidel method: {eigval}')
     tinit = time.time()
 
     try:
@@ -213,6 +225,9 @@ for n_subint in subintervals:
     # Solve the system using SOR iterative method
     w = 1.25
     print(f'Solving the system using Succesive Over-Relaxation method (w={w})')
+    H = sor_matrix(A, w)
+    eigval, eigvec = power_method(H)
+    print(f' maximum eigenvalue associated to SOR method: {eigval}')
     tinit = time.time()
 
     try:
