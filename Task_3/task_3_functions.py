@@ -93,6 +93,31 @@ def polar_laplace_eq_df_system(n, m, r_range, th_range, bcs):
     return matrix, vector
 
 
+def get_error_diff_grids(solution, analytical_sol, aim_shape):
+    """
+    Compare solution vs analytical solution when both are computed at points corresponding to aim_shape
+    Args:
+        solution (np.ndarray): Matrix with values at nodes
+        analytical_sol (np.ndarray): Reference solution used to compute error
+        aim_shape (tuple): Shape of the grid where errors are computed
+
+    Returns:
+        error (np.ndarray): Matrix with errors at points of the aim_shape grid
+    """
+
+    if (not solution.shape[0] % aim_shape[0]) & (not analytical_sol.shape[0] % aim_shape[0]) & \
+            (not solution.shape[1] % aim_shape[1]) & (not analytical_sol.shape[1] % aim_shape[1]):
+        raise ValueError("Input matrices cannot match aim shape")
+    else:
+        step_sol_0 = solution.shape[0] // aim_shape[0]
+        step_sol_1 = solution.shape[1] // aim_shape[1]
+        step_analytical_sol_0 = analytical_sol.shape[0] // aim_shape[0]
+        step_analytical_sol_1 = analytical_sol.shape[1] // aim_shape[1]
+        error = solution[::step_sol_0, ::step_sol_1] - analytical_sol[::step_analytical_sol_0, ::step_analytical_sol_1]
+
+        return error
+
+
 def document_test_polar(filename, solution, info='', latex_shape=None, analytical_sol=None, n_terms=None):
     """
     Document result obtained
@@ -132,7 +157,7 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                 f.write('\hline\n')
                 for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
                     row = solution[i]
-                    elems = row[m // (latex_shape[1] + 1):-2:m // (latex_shape[1] + 1)]
+                    elems = row[m // (latex_shape[1] + 1):-1:m // (latex_shape[1] + 1)]
                     formatted_row = ' & '.join([f'{value:12.10f}' for value in elems])
                     f.write(formatted_row + '\\\\\hline\n')
                 f.write('\hline\n')
@@ -153,9 +178,9 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                     f.write('Table for LaTeX:\n')
                     f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
                     f.write('\hline\n')
-                    for i in range(n // 3, solution.shape[0] - 1, n // 3):
+                    for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
                         row = solution[i] - analytical_sol[i]
-                        elems = row[m // 6:-2:m // 6]
+                        elems = row[m // (latex_shape[1] + 1):-1:m // (latex_shape[1] + 1)]
                         formatted_row = ' & '.join([f'{value:12.10f}' for value in elems])
                         f.write(formatted_row + '\\\\\hline\n')
                     f.write('\hline\n')
@@ -169,12 +194,11 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                     f.write('Table for LaTeX:\n')
                     f.write('\\begin{tabular}{|' + '|'.join(['c'] * latex_shape[1]) + '|}\n')
                     f.write('\hline\n')
-                    ii = 0
-                    for i in range(n // (latex_shape[0] + 1), solution.shape[0] - 1, n // (latex_shape[0] + 1)):
-                        ii += 1
-                        row = solution[i]
-                        elems = row[::m // (latex_shape[1] + 1)] - analytical_sol[ii]
-                        formatted_row = ' & '.join([f'{value:12.10f}' for value in elems[1:-1]])
+                    error = get_error_diff_grids(solution=solution, analytical_sol=analytical_sol,
+                                                 aim_shape=(latex_shape[0]+1, latex_shape[1]+1))
+                    for i in range(1, error.shape[0] - 1):
+                        row = error[i]
+                        formatted_row = ' & '.join([f'{value:12.10f}' for value in row[1:-1]])
                         f.write(formatted_row + '\\\\\hline\n')
                     f.write('\hline\n')
                     f.write('\\end{tabular}\n')
