@@ -36,7 +36,7 @@ boundary_conditions = [0, 1, 0, 0]
 N_Fourier = 100001
 n_tries = 15
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]#, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]#, 11, 12, 13, 14, 15]#, 16, 17, 18, 19, 20]
 
 # Which methods to run
 use_LU = True
@@ -153,7 +153,7 @@ for n_subint in subintervals:
         # Extract max eigval, to check for convergence
         H = jacobi_matrix(A)
         max_abs_eigval = 0.0
-        for ii in range(n_tries):
+        for ii in range(n_tries):  # Make several tries to ensure we get the actual maximum
             eigval, _ = power_method(H)
             if abs(eigval) > abs(max_abs_eigval):
                 max_abs_eigval = eigval
@@ -163,7 +163,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken acceleration method
             tinit = time.time()
-            x, niter = jacobi_method(A, b, max_iterations=1000000, tolerance=1e-5, aitken=True)
+            x, niter = jacobi_method(A, b, max_iterations=10000, tolerance=1e-5, aitken=True)
             jacobi_texe_aitken.append(time.time()-tinit)
             jacobi_nsubint.append(n_subint)
             jacobi_niter_aitken.append(niter)
@@ -172,10 +172,10 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = jacobi_method(A, b, max_iterations=1000000, tolerance=1e-5, aitken=False)
+            _, niter = jacobi_method(A, b, max_iterations=10000, tolerance=1e-5, aitken=False)
             jacobi_texe.append(time.time()-tinit)
             jacobi_niter.append(niter)
-            print(f' Not using Aitken: converged after {niter} iterations')
+            print(f' Not using Aitken: converged after {niter} iterations ({jacobi_texe[-1]} s)')
 
             # Unpack result
             jacobi_sol = np.zeros((N + 1, M + 1))
@@ -213,7 +213,7 @@ for n_subint in subintervals:
         # Extract max eigval, to check for convergence
         H = gs_matrix(A)
         max_abs_eigval = 0.0
-        for ii in range(n_tries):
+        for ii in range(n_tries):  # Make several tries to ensure we get the actual maximum
             eigval, _ = power_method(H)
             if abs(eigval) > abs(max_abs_eigval):
                 max_abs_eigval = eigval
@@ -223,7 +223,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken's acceleration method
             tinit = time.time()
-            x, niter = gauss_seidel(A, b, max_iterations=1000000, tolerance=1e-5, aitken=True)
+            x, niter = gauss_seidel(A, b, max_iterations=10000, tolerance=1e-5, aitken=True)
             gs_nsubint.append(n_subint)
             gs_texe_aitken.append(time.time()-tinit)
             gs_niter_aitken.append(niter)
@@ -232,10 +232,10 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = gauss_seidel(A, b, max_iterations=1000000, tolerance=1e-5, aitken=False)
+            _, niter = gauss_seidel(A, b, max_iterations=10000, tolerance=1e-5, aitken=False)
             gs_texe.append(time.time()-tinit)
             gs_niter.append(niter)
-            print(f' Not Using Aitken: converged after {niter} iterations')
+            print(f' Not Using Aitken: converged after {niter} iterations ({gs_texe[-1]} s)')
 
             # Unpack result
             gs_sol = np.zeros((N+1, M+1))
@@ -275,7 +275,7 @@ for n_subint in subintervals:
         # Extract max eigval, to check for convergence
         H = sor_matrix(A, w)
         max_abs_eigval = 0.0
-        for ii in range(n_tries):
+        for ii in range(n_tries):  # Make several tries to ensure we get the actual maximum
             eigval, _ = power_method(H, max_iterations=5000)
             if abs(eigval) > abs(max_abs_eigval):
                 max_abs_eigval = eigval
@@ -285,7 +285,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken's acceleration method
             tinit = time.time()
-            x, niter = sor_method(A, b, w=w, max_iterations=1000000, tolerance=1e-5)
+            x, niter = sor_method(A, b, w=w, max_iterations=10000, tolerance=1e-5, aitken=True)
             sor_nsubint.append(n_subint)
             sor_texe_aitken.append(time.time()-tinit)
             sor_niter_aitken.append(niter)
@@ -294,10 +294,10 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = sor_method(A, b, w=w, max_iterations=1000000, tolerance=1e-5, aitken=False)
+            _, niter = sor_method(A, b, w=w, max_iterations=10000, tolerance=1e-5, aitken=False)
             sor_texe.append(time.time()-tinit)
             sor_niter.append(niter)
-            print(f' Not Using Aitken: converged after {niter} iterations')
+            print(f' Not Using Aitken: converged after {niter} iterations ({sor_texe[-1]} s)')
 
             # Unpack result
             sor_sol = np.zeros((N+1, M+1))
@@ -352,6 +352,26 @@ plt.legend(fontsize=14)
 plt.xlim((subintervals[0], subintervals[-1]))
 plt.savefig(f'./Figures/texe.png', bbox_inches='tight')
 
+# Execution time
+plt.figure()
+if use_Jacobi:
+    plt.loglog(jacobi_nsubint, jacobi_texe, 'r-+', label='Jacobi')
+    plt.loglog(jacobi_nsubint, jacobi_texe_aitken, 'r--+')
+if use_GS:
+    plt.loglog(gs_nsubint, gs_texe, 'g-+', label='Gauss-Seidel')
+    plt.loglog(gs_nsubint, gs_texe_aitken, 'g--+')
+if use_SOR:
+    plt.loglog(sor_nsubint, sor_texe, 'b-+', label=f'SOR (w={w})')
+    plt.loglog(sor_nsubint, sor_texe_aitken, 'b--+')
+if use_LU:
+    plt.loglog(subintervals, lu_texe, 'k-+', label='LU')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('$t_{exe}$ [s]', fontsize=18)
+plt.legend(fontsize=14)
+# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+plt.savefig(f'./Figures/texe_log.png', bbox_inches='tight')
+
 
 # Eigvals
 plt.figure()
@@ -376,7 +396,7 @@ if use_Jacobi:
 if use_GS:
     plt.semilogy(gs_nsubint, [1-abs(eigv) for eigv in gs_eigval], 'g-+', label='Gauss-Seidel')
 if use_SOR:
-    plt.semilogy(sor_nsubint, [1-abs(eigv) for eigv in gs_eigval], 'b-+', label=f'SOR (w={w})')
+    plt.semilogy(sor_nsubint, [1-abs(eigv) for eigv in sor_eigval], 'b-+', label=f'SOR (w={w})')
 plt.grid(which='both')
 plt.xlabel('# of subintervals', fontsize=18)
 plt.ylabel('$1-max(|\lambda|)$', fontsize=18)
@@ -404,6 +424,25 @@ plt.xlim((subintervals[0], subintervals[-1]))
 plt.savefig(f'./Figures/niter.png', bbox_inches='tight')
 
 
+# Niter
+plt.figure()
+if use_Jacobi:
+    plt.loglog(jacobi_nsubint, jacobi_niter, 'r-+', label='Jacobi')
+    plt.loglog(jacobi_nsubint, jacobi_niter_aitken, 'r--+')
+if use_GS:
+    plt.loglog(gs_nsubint, gs_niter, 'g-+', label='Gauss-Seidel')
+    plt.loglog(gs_nsubint, gs_niter_aitken, 'g--+')
+if use_SOR:
+    plt.loglog(sor_nsubint, sor_niter, 'b-+', label=f'SOR (w={w})')
+    plt.loglog(sor_nsubint, sor_niter_aitken, 'b--+')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('# of iterations', fontsize=18)
+plt.legend(fontsize=14)
+# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+plt.savefig(f'./Figures/niter_log.png', bbox_inches='tight')
+
+
 # Max error
 plt.figure()
 if use_Jacobi:
@@ -420,3 +459,21 @@ plt.ylabel('$max(\\varepsilon)$', fontsize=18)
 plt.legend(fontsize=14)
 plt.xlim((subintervals[0], subintervals[-1]))
 plt.savefig(f'./Figures/error.png', bbox_inches='tight')
+
+
+# Max error
+plt.figure()
+if use_Jacobi:
+    plt.loglog(jacobi_nsubint, jacobi_maxerr, 'r-+', label='Jacobi')
+if use_GS:
+    plt.loglog(gs_nsubint, gs_maxerr, 'g-+', label='Gauss-Seidel')
+if use_SOR:
+    plt.loglog(sor_nsubint, sor_maxerr, 'b-+', label=f'SOR (w={w})')
+if use_LU:
+    plt.loglog(subintervals, lu_maxerr, 'k-+', label='LU')
+plt.grid(which='both')
+plt.xlabel('# of subintervals', fontsize=18)
+plt.ylabel('$max(\\varepsilon)$', fontsize=18)
+plt.legend(fontsize=14)
+# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+plt.savefig(f'./Figures/error_log.png', bbox_inches='tight')
