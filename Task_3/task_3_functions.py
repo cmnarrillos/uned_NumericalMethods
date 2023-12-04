@@ -104,8 +104,8 @@ def jacobi_matrix(A):
     """
     # Step 1: Compute matrices D, L, and U
     D_inv = np.diag(1/np.diag(A))
-    L = np.tril(A, k=-1)
-    U = np.triu(A, k=1)
+    L = -np.tril(A, k=-1)
+    U = -np.triu(A, k=1)
 
     H = np.matmul(D_inv, (L + U))
 
@@ -123,8 +123,8 @@ def gs_matrix(A):
     """
     # Step 1: Compute matrices D, L, and U
     D = np.diag(np.diag(A))
-    L = np.tril(A, k=-1)
-    U = np.triu(A, k=1)
+    L = -np.tril(A, k=-1)
+    U = -np.triu(A, k=1)
 
     H = np.matmul(inverse_lower_triangular(D - L), U)
 
@@ -145,8 +145,8 @@ def sor_matrix(A, w):
 
     # Step 1: Compute matrices D, L, and U
     D_inv = np.diag(1/np.diag(A))
-    L = np.tril(A, k=-1)
-    U = np.triu(A, k=1)
+    L = -np.tril(A, k=-1)
+    U = -np.triu(A, k=1)
 
     lhs = np.eye(n) - w * np.matmul(D_inv, L)
     lhs_inv = inverse_lower_triangular(lhs)
