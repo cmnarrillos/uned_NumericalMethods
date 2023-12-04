@@ -251,8 +251,8 @@ def document_test_polar(filename, solution, info='', latex_shape=None, analytica
                     f.write('\hline\n')
                     f.write('\\end{tabular}\n')
 
-            elif (not (analytical_sol.shape[0]-1) % latex_shape[0]) & (not (n-1) % latex_shape[0]) & \
-                    (not (analytical_sol.shape[1]-1) % latex_shape[1]) & (not (m-1) % latex_shape[1]):
+            elif (not (analytical_sol.shape[0]-1) % latex_shape[0]) & (not n % latex_shape[0]) & \
+                    (not (analytical_sol.shape[1]-1) % latex_shape[1]) & (not m % latex_shape[1]):
                 f.write(f'Error wrt analytical solution obtained with {n_terms} terms (error ~O(1/N)~'
                         f'{1 / (n_terms - 1)}\n')
                 f.write('\n\n\n')
