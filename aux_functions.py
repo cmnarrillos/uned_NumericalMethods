@@ -215,7 +215,7 @@ def calculate_norm(vector):
     return np.sqrt(np.sum(vector**2))
 
 
-def jacobi_method(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
+def jacobi_method(A, b, x0=None, max_iterations=1000, tolerance=1e-10, aitken=True):
     """
     Solve a linear system Ax = b using the Jacobi iterative method.
 
@@ -225,6 +225,7 @@ def jacobi_method(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
         x0: Initial guess for the solution (default is None, which initializes to zeros)
         max_iterations: Maximum number of iterations (default is 1000)
         tolerance: Convergence tolerance (default is 1e-10)
+        aitken: boolean telling whether to use Aitken's acceleration method (default is True)
 
     Returns:
         x: Solution vector (n x 1)
@@ -241,15 +242,24 @@ def jacobi_method(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
             sigma = np.dot(A[i, :i], x_old[:i]) + np.dot(A[i, i + 1:], x_old[i + 1:])
             x[i] = (b[i] - sigma) / A[i, i]
 
+        # Combine using Aitken's acc method
+        x_out = x.copy()
+        if aitken:
+            if iteration > 1:
+                for i in range(n):
+                    x_out[i] = x[i] - (x[i]-x_old[i])**2 / (x[i] - 2*x_old[i] + x_prev[i])
+
+            x_prev = x_old.copy()
+
         # Check for convergence
-        residual = calculate_norm(np.dot(A, x) - b)
+        residual = calculate_norm(np.dot(A, x_out) - b)
         if residual < tolerance:
-            return x, iteration + 1
+            return x_out, iteration + 1
 
     raise RuntimeError("Jacobi method did not converge within the specified number of iterations.")
 
 
-def gauss_seidel(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
+def gauss_seidel(A, b, x0=None, max_iterations=1000, tolerance=1e-10, aitken=True):
     """
     Solve a linear system Ax = b using the Gauss-Seidel iterative method.
 
@@ -259,6 +269,7 @@ def gauss_seidel(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
         x0: Initial guess for the solution (default is None, which initializes to zeros)
         max_iterations: Maximum number of iterations (default is 1000)
         tolerance: Convergence tolerance (default is 1e-10)
+        aitken: boolean telling whether to use Aitken's acceleration method (default is True)
 
     Returns:
         x: Solution vector (n x 1)
@@ -276,15 +287,24 @@ def gauss_seidel(A, b, x0=None, max_iterations=1000, tolerance=1e-10):
             sigma_backward = np.dot(A[i, i + 1:], x_old[i + 1:])
             x[i] = (b[i] - sigma_forward - sigma_backward) / A[i, i]
 
+        # Combine using Aitken's acc method
+        x_out = x.copy()
+        if aitken:
+            if iteration > 1:
+                for i in range(n):
+                    x_out[i] = x[i] - (x[i]-x_old[i])**2 / (x[i] - 2*x_old[i] + x_prev[i])
+
+            x_prev = x_old.copy()
+
         # Check for convergence
-        residual = calculate_norm(np.dot(A, x) - b)
+        residual = calculate_norm(np.dot(A, x_out) - b)
         if residual < tolerance:
-            return x, iteration + 1
+            return x_out, iteration + 1
 
     raise RuntimeError("Gauss-Seidel method did not converge within the specified number of iterations.")
 
 
-def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
+def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10, aitken=True):
     """
     Solve a linear system Ax = b using the Successive Over-Relaxation (SOR) iterative method.
 
@@ -295,6 +315,7 @@ def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
         x0: Initial guess for the solution (default is None, which initializes to zeros)
         max_iterations: Maximum number of iterations (default is 1000)
         tolerance: Convergence tolerance (default is 1e-10)
+        aitken: boolean telling whether to use Aitken's acceleration method (default is True)
 
     Returns:
         x: Solution vector (n x 1)
@@ -312,10 +333,19 @@ def sor_method(A, b, w, x0=None, max_iterations=1000, tolerance=1e-10):
             sigma_backward = np.dot(A[i, i + 1:], x_old[i + 1:])
             x[i] = (1 - w) * x_old[i] + (w / A[i, i]) * (b[i] - sigma_forward - sigma_backward)
 
+        # Combine using Aitken's acc method
+        x_out = x.copy()
+        if aitken:
+            if iteration > 1:
+                for i in range(n):
+                    x_out[i] = x[i] - (x[i]-x_old[i])**2 / (x[i] - 2*x_old[i] + x_prev[i])
+
+            x_prev = x_old.copy()
+
         # Check for convergence
-        residual = np.linalg.norm(A @ x - b)
+        residual = calculate_norm(np.dot(A, x_out) - b)
         if residual < tolerance:
-            return x, iteration + 1
+            return x_out, iteration + 1
 
     raise RuntimeError("SOR method did not converge within the specified number of iterations.")
 
