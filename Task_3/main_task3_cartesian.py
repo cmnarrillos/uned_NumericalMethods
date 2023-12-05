@@ -23,19 +23,28 @@ except ImportError:
 
 if not os.path.exists('./Figures/'):
     os.makedirs('./Figures/')
+if not os.path.exists('./Figures/cmaps/'):
+    os.makedirs('./Figures/cmaps/')
 if not os.path.exists('./results/'):
     os.makedirs('./results/')
 
 
 # Define general parameters of the problem:
-N_latex = 6
-M_latex = 3
+N_latex = 18
+M_latex = 9
 radius = 1
+T_0 = -10
+T_1 = 90
 boundary_conditions = [0, 1]
 N_Fourier = 100001
 n_tries = 15
 
 subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+subintervals = [5]
+
+# What to plot
+plt_gral = False
+plt_output = True
 
 # Which methods to run
 use_LU = True
@@ -83,7 +92,6 @@ info = f'Analytical solution of Laplace eq in cartesian coordinates over a mesh 
 document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(M_latex, N_latex))
 
 
-
 for n_subint in subintervals:
     # Get the linear system representing the edp in polar coordinates
     print()
@@ -93,7 +101,6 @@ for n_subint in subintervals:
     M = M_latex * n_subint
     print(f'Initializing cartesian finite differences system: [{N}x{M}] grid')
     A, b = cartesian_laplace_eq_df_system(N, M, radius, boundary_conditions)
-
 
     # Solve the system using LU decomposition
     if use_LU:
@@ -175,106 +182,201 @@ for n_subint in subintervals:
             print()
 
 # Plot general stats
-# Execution time
-plt.figure()
-if use_SOR:
-    plt.semilogy(sor_nsubint, sor_texe, 'b-+', label=f'SOR (w={w})')
-if use_LU:
-    plt.semilogy(subintervals, lu_texe, 'k-+', label='LU')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$t_{exe}$ [s]', fontsize=18)
-plt.legend(fontsize=14)
-plt.xlim((subintervals[0], subintervals[-1]))
-plt.savefig(f'./Figures/cartesian_texe.png', bbox_inches='tight')
+if plt_gral & len(subintervals) > 1:
+    # Execution time
+    plt.figure()
+    if use_SOR:
+        plt.semilogy(sor_nsubint, sor_texe, 'b-+', label=f'SOR (w={w})')
+    if use_LU:
+        plt.semilogy(subintervals, lu_texe, 'k-+', label='LU')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$t_{exe}$ [s]', fontsize=18)
+    plt.legend(fontsize=14)
+    plt.xlim((subintervals[0], subintervals[-1]))
+    plt.savefig(f'./Figures/cartesian_texe.png', bbox_inches='tight')
 
-# Execution time
-plt.figure()
-if use_SOR:
-    plt.loglog(sor_nsubint, sor_texe, 'b-+', label=f'SOR (w={w})')
-if use_LU:
-    plt.loglog(subintervals, lu_texe, 'k-+', label='LU')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$t_{exe}$ [s]', fontsize=18)
-plt.legend(fontsize=14)
-# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
-plt.savefig(f'./Figures/cartesian_texe_log.png', bbox_inches='tight')
+    # Execution time
+    plt.figure()
+    if use_SOR:
+        plt.loglog(sor_nsubint, sor_texe, 'b-+', label=f'SOR (w={w})')
+    if use_LU:
+        plt.loglog(subintervals, lu_texe, 'k-+', label='LU')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$t_{exe}$ [s]', fontsize=18)
+    plt.legend(fontsize=14)
+    # plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+    plt.savefig(f'./Figures/cartesian_texe_log.png', bbox_inches='tight')
 
+    # Eigvals
+    plt.figure()
+    if use_SOR:
+        plt.plot(subintervals, sor_eigval, 'b-+', label=f'SOR (w={w})')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$max(|\lambda|)$', fontsize=18)
+    plt.legend(fontsize=14)
+    plt.xlim((subintervals[0], subintervals[-1]))
+    plt.savefig(f'./Figures/cartesian_eigval.png', bbox_inches='tight')
 
-# Eigvals
-plt.figure()
-if use_SOR:
-    plt.plot(subintervals, sor_eigval, 'b-+', label=f'SOR (w={w})')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$max(|\lambda|)$', fontsize=18)
-plt.legend(fontsize=14)
-plt.xlim((subintervals[0], subintervals[-1]))
-plt.savefig(f'./Figures/cartesian_eigval.png', bbox_inches='tight')
+    # Eigvals abs
+    plt.figure()
+    if use_SOR:
+        plt.semilogy(subintervals, [1-abs(eigv) for eigv in sor_eigval], 'b-+', label=f'SOR (w={w})')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$1-max(|\lambda|)$', fontsize=18)
+    plt.legend(fontsize=14)
+    plt.xlim((subintervals[0], subintervals[-1]))
+    plt.savefig(f'./Figures/cartesian_eigval_abs.png', bbox_inches='tight')
 
+    # Niter
+    plt.figure()
+    if use_SOR:
+        plt.semilogy(sor_nsubint, sor_niter, 'b-+', label=f'SOR (w={w})')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('# of iterations', fontsize=18)
+    plt.legend(fontsize=14)
+    plt.xlim((subintervals[0], subintervals[-1]))
+    plt.savefig(f'./Figures/cartesian_niter.png', bbox_inches='tight')
 
-# Eigvals abs
-plt.figure()
-if use_SOR:
-    plt.semilogy(subintervals, [1-abs(eigv) for eigv in sor_eigval], 'b-+', label=f'SOR (w={w})')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$1-max(|\lambda|)$', fontsize=18)
-plt.legend(fontsize=14)
-plt.xlim((subintervals[0], subintervals[-1]))
-plt.savefig(f'./Figures/cartesian_eigval_abs.png', bbox_inches='tight')
+    # Niter
+    plt.figure()
+    if use_SOR:
+        plt.loglog(sor_nsubint, sor_niter, 'b-+', label=f'SOR (w={w})')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('# of iterations', fontsize=18)
+    plt.legend(fontsize=14)
+    # plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+    plt.savefig(f'./Figures/cartesian_niter_log.png', bbox_inches='tight')
 
+    # Max error
+    plt.figure()
+    if use_SOR:
+        plt.semilogy(sor_nsubint, sor_maxerr, 'b-+', label=f'SOR (w={w})')
+    if use_LU:
+        plt.semilogy(subintervals, lu_maxerr, 'k-+', label='LU')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$max(\\varepsilon)$', fontsize=18)
+    plt.legend(fontsize=14)
+    plt.xlim((subintervals[0], subintervals[-1]))
+    plt.savefig(f'./Figures/cartesian_error.png', bbox_inches='tight')
 
-# Niter
-plt.figure()
-if use_SOR:
-    plt.semilogy(sor_nsubint, sor_niter, 'b-+', label=f'SOR (w={w})')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('# of iterations', fontsize=18)
-plt.legend(fontsize=14)
-plt.xlim((subintervals[0], subintervals[-1]))
-plt.savefig(f'./Figures/cartesian_niter.png', bbox_inches='tight')
-
-
-# Niter
-plt.figure()
-if use_SOR:
-    plt.loglog(sor_nsubint, sor_niter, 'b-+', label=f'SOR (w={w})')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('# of iterations', fontsize=18)
-plt.legend(fontsize=14)
-# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
-plt.savefig(f'./Figures/cartesian_niter_log.png', bbox_inches='tight')
-
-
-# Max error
-plt.figure()
-if use_SOR:
-    plt.semilogy(sor_nsubint, sor_maxerr, 'b-+', label=f'SOR (w={w})')
-if use_LU:
-    plt.semilogy(subintervals, lu_maxerr, 'k-+', label='LU')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$max(\\varepsilon)$', fontsize=18)
-plt.legend(fontsize=14)
-plt.xlim((subintervals[0], subintervals[-1]))
-plt.savefig(f'./Figures/cartesian_error.png', bbox_inches='tight')
-
-
-# Max error
-plt.figure()
-if use_SOR:
-    plt.loglog(sor_nsubint, sor_maxerr, 'b-+', label=f'SOR (w={w})')
-if use_LU:
-    plt.loglog(subintervals, lu_maxerr, 'k-+', label='LU')
-plt.grid(which='both')
-plt.xlabel('# of subintervals', fontsize=18)
-plt.ylabel('$max(\\varepsilon)$', fontsize=18)
-plt.legend(fontsize=14)
-# plt.xlim((subintervals[0]/10, subintervals[-1]*10))
-plt.savefig(f'./Figures/cartesian_error_log.png', bbox_inches='tight')
+    # Max error
+    plt.figure()
+    if use_SOR:
+        plt.loglog(sor_nsubint, sor_maxerr, 'b-+', label=f'SOR (w={w})')
+    if use_LU:
+        plt.loglog(subintervals, lu_maxerr, 'k-+', label='LU')
+    plt.grid(which='both')
+    plt.xlabel('# of subintervals', fontsize=18)
+    plt.ylabel('$max(\\varepsilon)$', fontsize=18)
+    plt.legend(fontsize=14)
+    # plt.xlim((subintervals[0]/10, subintervals[-1]*10))
+    plt.savefig(f'./Figures/cartesian_error_log.png', bbox_inches='tight')
 
 
+# Plot distribution of temperature
+if plt_output:
+    # Auxiliar variables for plotting
+    x_circle = [radius*np.cos(theta) for theta in np.linspace(0, np.pi, N+1)]
+    y_circle = [radius*np.sin(theta) for theta in np.linspace(0, np.pi, N+1)]
+
+    x_grid_0 = np.linspace(-radius, radius, N_latex+1)
+    y_grid_0 = np.linspace(0, radius, M_latex+1)
+    domain_0 = radius*(-1-1/N_latex, 1+1/N_latex, 1+0.5/M_latex, -0.5/M_latex)
+
+    x_grid = np.linspace(-radius, radius, N+1)
+    y_grid = np.linspace(0, radius, M+1)
+    domain = radius*(-1-1/N, 1+1/N, 1+0.5/M, -0.5/M)
+
+    # Plot analytical temperature distribution
+    plt.figure(figsize=(12, 8))
+    plt.imshow(T_0 + (T_1-T_0)*analytical_sol, extent=domain_0, cmap='viridis', interpolation='nearest')
+    # Plot grid
+    for x in x_grid_0:
+        plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+    for y in y_grid_0:
+        plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+    # Plot domain
+    plt.plot(x_circle, y_circle, '-k', linewidth=2)
+    plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+    plt.xlim((-radius, radius))
+    plt.ylim((0, radius))
+    plt.colorbar()
+    plt.title('Temperature distribution (analytical)', fontsize=18)
+    plt.savefig(f'./Figures/cmaps/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png', bbox_inches='tight')
+
+    if use_LU:
+        # Plot Temperature map obtained with LU method
+        plt.figure(figsize=(12, 8))
+        plt.imshow(T_0 + (T_1-T_0)*lu_sol, extent=domain, cmap='viridis', interpolation='nearest')
+        # Plot grid
+        for x in x_grid:
+            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+        for y in y_grid:
+            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+        # Plot domain
+        plt.plot(x_circle, y_circle, '-k', linewidth=2)
+        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+        plt.xlim((-radius, radius))
+        plt.ylim((0, radius))
+        plt.colorbar()
+        plt.title('Temperature distribution (LU)', fontsize=18)
+        plt.savefig(f'./Figures/cmaps/cartesian_T_map_LU_{N}x{M}.png', bbox_inches='tight')
+
+        # Plot Error map obtained with LU method
+        plt.figure(figsize=(12, 8))
+        plt.imshow((T_1-T_0)*lu_error, extent=domain_0, cmap='viridis', interpolation='nearest')
+        # Plot grid
+        for x in x_grid_0:
+            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+        for y in y_grid_0:
+            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+        # Plot domain
+        plt.plot(x_circle, y_circle, '-k', linewidth=2)
+        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+        plt.xlim((-radius, radius))
+        plt.ylim((0, radius))
+        plt.colorbar()
+        plt.title('Temperature error (LU)', fontsize=18)
+        plt.savefig(f'./Figures/cmaps/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+
+    if use_SOR:
+        # Plot Temperature map obtained with SOR method
+        plt.figure(figsize=(12, 8))
+        plt.imshow(T_0 + (T_1-T_0)*sor_sol, extent=domain, cmap='viridis', interpolation='nearest')
+        # Plot grid
+        for x in x_grid:
+            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+        for y in y_grid:
+            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+        # Plot domain
+        plt.plot(x_circle, y_circle, '-k', linewidth=2)
+        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+        plt.xlim((-radius, radius))
+        plt.ylim((0, radius))
+        plt.colorbar()
+        plt.title('Temperature distribution (SOR)', fontsize=18)
+        plt.savefig(f'./Figures/cmaps/cartesian_T_map_SOR_{N}x{M}.png', bbox_inches='tight')
+
+        # Plot Error map obtained with SOR method
+        plt.figure(figsize=(12, 8))
+        plt.imshow((T_1-T_0)*sor_error, extent=domain_0, cmap='viridis', interpolation='nearest')
+        # Plot grid
+        for x in x_grid_0:
+            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+        for y in y_grid_0:
+            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+        # Plot domain
+        plt.plot(x_circle, y_circle, '-k', linewidth=2)
+        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+        plt.xlim((-radius, radius))
+        plt.ylim((0, radius))
+        plt.colorbar()
+        plt.title('Temperature error (SOR)', fontsize=18)
+        plt.savefig(f'./Figures/cmaps/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
