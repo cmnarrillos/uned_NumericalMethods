@@ -3,7 +3,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-from task_3_functions import fourier_series_analytical_sol, polar_laplace_eq_df_system, document_test_polar, \
+from task_3_functions import fourier_series_analytical_sol, polar_laplace_eq_df_system, document_test, \
                              get_error_diff_grids, jacobi_matrix, gs_matrix, sor_matrix
 
 # Try to import from the current folder; if not found, import from the parent folder
@@ -97,7 +97,7 @@ info = f'Analytical solution of Laplace eq in polar coordinates over a mesh with
        f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
        f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
        f'using {N_Fourier} terms of the series: u(rho,theta) = sum_[n odd] 4/(n*pi)*rho^n*sin(n*theta)'
-document_test_polar(filename=filename, solution=analytical_sol, info=info, latex_shape=(N_latex, M_latex))
+document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(N_latex, M_latex))
 
 
 for n_subint in subintervals:
@@ -143,8 +143,8 @@ for n_subint in subintervals:
                f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                f'Obtained using LU decomposition for linear system solving'
-        document_test_polar(filename=filename, solution=lu_sol, info=info, latex_shape=(N_latex, M_latex),
-                            analytical_sol=analytical_sol, n_terms=N_Fourier)
+        document_test(filename=filename, solution=lu_sol, info=info, latex_shape=(N_latex, M_latex),
+                      analytical_sol=analytical_sol, n_terms=N_Fourier)
 
 
     # Solve the system using Jacobi iterative method
@@ -199,7 +199,7 @@ for n_subint in subintervals:
                    f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Jacobi method for linear system solving ({niter} iterations for convergence)'
-            document_test_polar(filename=filename, solution=jacobi_sol, info=info, latex_shape=(N_latex, M_latex),
+            document_test(filename=filename, solution=jacobi_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
 
         except RuntimeError as e:
@@ -259,7 +259,7 @@ for n_subint in subintervals:
                    f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Gauss-Seidel method for linear system solving ({niter} iterations for convergence)'
-            document_test_polar(filename=filename, solution=gs_sol, info=info, latex_shape=(N_latex, M_latex),
+            document_test(filename=filename, solution=gs_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
 
         except RuntimeError as e:
@@ -322,7 +322,7 @@ for n_subint in subintervals:
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Succesive Over-Relaxation (SOR) method for linear system solving with w={w} ' \
                    f'({niter} iterations for convergence)'
-            document_test_polar(filename=filename, solution=sor_sol, info=info, latex_shape=(N_latex, M_latex),
+            document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
 
         except RuntimeError as e:
