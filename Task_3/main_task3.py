@@ -36,7 +36,7 @@ boundary_conditions = [0, 1, 0, 0]
 N_Fourier = 100001
 n_tries = 15
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]#, 11, 12, 13, 14, 15]#, 16, 17, 18, 19, 20]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]#, 13, 14, 15, 16, 17, 18, 19, 20]
 
 # Which methods to run
 use_LU = True
@@ -97,7 +97,7 @@ info = f'Analytical solution of Laplace eq in polar coordinates over a mesh with
        f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
        f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
        f'using {N_Fourier} terms of the series: u(rho,theta) = sum_[n odd] 4/(n*pi)*rho^n*sin(n*theta)'
-document_test_polar(filename=filename, solution=analytical_sol, info=info, latex_shape=(2, 5))
+document_test_polar(filename=filename, solution=analytical_sol, info=info, latex_shape=(N_latex, M_latex))
 
 
 for n_subint in subintervals:
@@ -163,7 +163,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken acceleration method
             tinit = time.time()
-            x, niter = jacobi_method(A, b, max_iterations=10000, tolerance=1e-5, aitken=True)
+            x, niter = jacobi_method(A, b, max_iterations=50000, tolerance=1e-5, aitken=True)
             jacobi_texe_aitken.append(time.time()-tinit)
             jacobi_nsubint.append(n_subint)
             jacobi_niter_aitken.append(niter)
@@ -172,7 +172,7 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = jacobi_method(A, b, max_iterations=10000, tolerance=1e-5, aitken=False)
+            _, niter = jacobi_method(A, b, max_iterations=50000, tolerance=1e-5, aitken=False)
             jacobi_texe.append(time.time()-tinit)
             jacobi_niter.append(niter)
             print(f' Not using Aitken: converged after {niter} iterations ({jacobi_texe[-1]} s)')
@@ -223,7 +223,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken's acceleration method
             tinit = time.time()
-            x, niter = gauss_seidel(A, b, max_iterations=10000, tolerance=1e-5, aitken=True)
+            x, niter = gauss_seidel(A, b, max_iterations=50000, tolerance=1e-5, aitken=True)
             gs_nsubint.append(n_subint)
             gs_texe_aitken.append(time.time()-tinit)
             gs_niter_aitken.append(niter)
@@ -232,7 +232,7 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = gauss_seidel(A, b, max_iterations=10000, tolerance=1e-5, aitken=False)
+            _, niter = gauss_seidel(A, b, max_iterations=50000, tolerance=1e-5, aitken=False)
             gs_texe.append(time.time()-tinit)
             gs_niter.append(niter)
             print(f' Not Using Aitken: converged after {niter} iterations ({gs_texe[-1]} s)')
@@ -285,7 +285,7 @@ for n_subint in subintervals:
         try:
             # Using Aitken's acceleration method
             tinit = time.time()
-            x, niter = sor_method(A, b, w=w, max_iterations=10000, tolerance=1e-5, aitken=True)
+            x, niter = sor_method(A, b, w=w, max_iterations=50000, tolerance=1e-5, aitken=True)
             sor_nsubint.append(n_subint)
             sor_texe_aitken.append(time.time()-tinit)
             sor_niter_aitken.append(niter)
@@ -294,7 +294,7 @@ for n_subint in subintervals:
 
             # Not using Aitken's
             tinit = time.time()
-            _, niter = sor_method(A, b, w=w, max_iterations=10000, tolerance=1e-5, aitken=False)
+            _, niter = sor_method(A, b, w=w, max_iterations=50000, tolerance=1e-5, aitken=False)
             sor_texe.append(time.time()-tinit)
             sor_niter.append(niter)
             print(f' Not Using Aitken: converged after {niter} iterations ({sor_texe[-1]} s)')
@@ -376,11 +376,11 @@ plt.savefig(f'./Figures/texe_log.png', bbox_inches='tight')
 # Eigvals
 plt.figure()
 if use_Jacobi:
-    plt.plot(jacobi_nsubint, jacobi_eigval, 'r-+', label='Jacobi')
+    plt.plot(subintervals, jacobi_eigval, 'r-+', label='Jacobi')
 if use_GS:
-    plt.plot(gs_nsubint, gs_eigval, 'g-+', label='Gauss-Seidel')
+    plt.plot(subintervals, gs_eigval, 'g-+', label='Gauss-Seidel')
 if use_SOR:
-    plt.plot(sor_nsubint, sor_eigval, 'b-+', label=f'SOR (w={w})')
+    plt.plot(subintervals, sor_eigval, 'b-+', label=f'SOR (w={w})')
 plt.grid(which='both')
 plt.xlabel('# of subintervals', fontsize=18)
 plt.ylabel('$max(|\lambda|)$', fontsize=18)
@@ -392,11 +392,11 @@ plt.savefig(f'./Figures/eigval.png', bbox_inches='tight')
 # Eigvals abs
 plt.figure()
 if use_Jacobi:
-    plt.semilogy(jacobi_nsubint, [1-abs(eigv) for eigv in jacobi_eigval], 'r-+', label='Jacobi')
+    plt.semilogy(subintervals, [1-abs(eigv) for eigv in jacobi_eigval], 'r-+', label='Jacobi')
 if use_GS:
-    plt.semilogy(gs_nsubint, [1-abs(eigv) for eigv in gs_eigval], 'g-+', label='Gauss-Seidel')
+    plt.semilogy(subintervals, [1-abs(eigv) for eigv in gs_eigval], 'g-+', label='Gauss-Seidel')
 if use_SOR:
-    plt.semilogy(sor_nsubint, [1-abs(eigv) for eigv in sor_eigval], 'b-+', label=f'SOR (w={w})')
+    plt.semilogy(subintervals, [1-abs(eigv) for eigv in sor_eigval], 'b-+', label=f'SOR (w={w})')
 plt.grid(which='both')
 plt.xlabel('# of subintervals', fontsize=18)
 plt.ylabel('$1-max(|\lambda|)$', fontsize=18)
