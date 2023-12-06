@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from task_3_functions import fourier_series_analytical_sol, cartesian_laplace_eq_df_system, document_test, \
-                             get_error_diff_grids, sor_matrix, unpack_cartesian
+                             get_error_diff_grids, sor_matrix, unpack_cartesian, plot_cartesian_colormap
 
 # Try to import from the current folder; if not found, import from the parent folder
 try:
@@ -25,13 +25,15 @@ if not os.path.exists('./Figures/'):
     os.makedirs('./Figures/')
 if not os.path.exists('./Figures/cmaps/'):
     os.makedirs('./Figures/cmaps/')
+if not os.path.exists('./Figures/cmaps_adim/'):
+    os.makedirs('./Figures/cmaps_adim/')
 if not os.path.exists('./results/'):
     os.makedirs('./results/')
 
 
 # Define general parameters of the problem:
-N_latex = 18
-M_latex = 9
+N_latex = 6
+M_latex = 3
 radius = 1
 T_0 = -10
 T_1 = 90
@@ -45,10 +47,12 @@ subintervals = [5]
 # What to plot
 plt_gral = False
 plt_output = True
+if not plt_gral and plt_output:
+    subintervals = [subintervals[-1]]
 
 # Which methods to run
 use_LU = True
-use_SOR = True
+use_SOR = False
 
 # Initialize lists to store general vars
 if use_LU:
@@ -63,13 +67,16 @@ if use_SOR:
     sor_texe_aitken = []
     sor_niter_aitken = []
 
+# Needed later on
+sor_failed = True
+
 
 # Obtain the analytical solution at the points of the grid
 N = N_latex
 M = M_latex
 
-x_vals = np.linspace(-radius, radius, N+1)
-y_vals = np.linspace(0, radius, M+1)
+x_vals = np.linspace(-1, 1, N+1)
+y_vals = np.linspace(0, 1, M+1)
 
 print('Computing analytical solution')
 tinit = time.time()
@@ -78,7 +85,7 @@ analytical_sol = np.ones((M+1, N+1))
 for jj, y in enumerate(y_vals):
     for ii, x in enumerate(x_vals):
         rho = np.sqrt(x**2 + y**2)
-        if rho <= radius:
+        if rho <= 1:
             theta = np.arctan2(y, x)
             analytical_sol[jj, ii] = fourier_series_analytical_sol(rho, theta, n_terms=N_Fourier)
 print(f' execution time: {time.time()-tinit} s')
@@ -175,11 +182,13 @@ for n_subint in subintervals:
                    f'({niter} iterations for convergence)'
             document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(M_latex, N_latex),
                           analytical_sol=analytical_sol, n_terms=N_Fourier)
+            sor_failed = False
 
         except RuntimeError as e:
             # Handle the exception (e.g., print an error message)
             print(f"Error: {e}")
             print()
+            sor_failed = True
 
 # Plot general stats
 if plt_gral & len(subintervals) > 1:
@@ -282,101 +291,68 @@ if plt_gral & len(subintervals) > 1:
 
 # Plot distribution of temperature
 if plt_output:
-    # Auxiliar variables for plotting
-    x_circle = [radius*np.cos(theta) for theta in np.linspace(0, np.pi, N+1)]
-    y_circle = [radius*np.sin(theta) for theta in np.linspace(0, np.pi, N+1)]
+    x_vals_distrib = np.linspace(-1, 1, N+1)
+    y_vals_distrib = np.linspace(0, 1, M+1)
 
-    x_grid_0 = np.linspace(-radius, radius, N_latex+1)
-    y_grid_0 = np.linspace(0, radius, M_latex+1)
-    domain_0 = radius*(-1-1/N_latex, 1+1/N_latex, 1+0.5/M_latex, -0.5/M_latex)
-
-    x_grid = np.linspace(-radius, radius, N+1)
-    y_grid = np.linspace(0, radius, M+1)
-    domain = radius*(-1-1/N, 1+1/N, 1+0.5/M, -0.5/M)
+    x_vals_ref = x_vals
+    y_vals_ref = y_vals
 
     # Plot analytical temperature distribution
-    plt.figure(figsize=(12, 8))
-    plt.imshow(T_0 + (T_1-T_0)*analytical_sol, extent=domain_0, cmap='viridis', interpolation='nearest')
-    # Plot grid
-    for x in x_grid_0:
-        plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
-    for y in y_grid_0:
-        plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
-    # Plot domain
-    plt.plot(x_circle, y_circle, '-k', linewidth=2)
-    plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
-    plt.xlim((-radius, radius))
-    plt.ylim((0, radius))
-    plt.colorbar()
-    plt.title('Temperature distribution (analytical)', fontsize=18)
-    plt.savefig(f'./Figures/cmaps/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png', bbox_inches='tight')
+    filename = f'./Figures/cmaps/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    title = 'Temperature distribution - Analytical ($T(x, y)$)'
+    plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=T_0 + (T_1 - T_0) * analytical_sol,
+                            filename=filename, title=title)
+
+    # Non-dimensional plot
+    # Plot Temperature map obtained with LU method
+    filename = f'./Figures/cmaps_adim/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    title = 'Temperature non-dimensional distribution - Analytical ($u(\\xi,\\eta)$)'
+    plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=analytical_sol, filename=filename, title=title)
 
     if use_LU:
         # Plot Temperature map obtained with LU method
-        plt.figure(figsize=(12, 8))
-        plt.imshow(T_0 + (T_1-T_0)*lu_sol, extent=domain, cmap='viridis', interpolation='nearest')
-        # Plot grid
-        for x in x_grid:
-            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
-        for y in y_grid:
-            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
-        # Plot domain
-        plt.plot(x_circle, y_circle, '-k', linewidth=2)
-        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
-        plt.xlim((-radius, radius))
-        plt.ylim((0, radius))
-        plt.colorbar()
-        plt.title('Temperature distribution (LU)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/cartesian_T_map_LU_{N}x{M}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/cartesian_T_map_LU_{N}x{M}.png'
+        title = 'Temperature distribution - LU ($T(x,y)$)'
+        plot_cartesian_colormap(radius * x_vals_distrib, radius * y_vals_distrib, solution=T_0 + (T_1 - T_0) * lu_sol,
+                                filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        plt.figure(figsize=(12, 8))
-        plt.imshow((T_1-T_0)*lu_error, extent=domain_0, cmap='viridis', interpolation='nearest')
-        # Plot grid
-        for x in x_grid_0:
-            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
-        for y in y_grid_0:
-            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
-        # Plot domain
-        plt.plot(x_circle, y_circle, '-k', linewidth=2)
-        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
-        plt.xlim((-radius, radius))
-        plt.ylim((0, radius))
-        plt.colorbar()
-        plt.title('Temperature error (LU)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - LU ($\Delta T(x,y)$)'
+        plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=(T_1 - T_0) * lu_error,
+                                filename=filename, title=title)
 
-    if use_SOR:
+        # Non-dimensional plots
+        # Plot Temperature map obtained with LU method
+        filename = f'./Figures/cmaps_adim/cartesian_T_map_LU_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - LU ($u(\\xi,\\eta)$)'
+        plot_cartesian_colormap(x_vals_distrib, y_vals_distrib, solution=lu_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with LU method
+        filename = f'./Figures/cmaps_adim/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - LU ($\Delta u(\\xi,\\eta)$)'
+        plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=lu_error, filename=filename, title=title)
+
+    if use_SOR & (not sor_failed):
         # Plot Temperature map obtained with SOR method
-        plt.figure(figsize=(12, 8))
-        plt.imshow(T_0 + (T_1-T_0)*sor_sol, extent=domain, cmap='viridis', interpolation='nearest')
-        # Plot grid
-        for x in x_grid:
-            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
-        for y in y_grid:
-            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
-        # Plot domain
-        plt.plot(x_circle, y_circle, '-k', linewidth=2)
-        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
-        plt.xlim((-radius, radius))
-        plt.ylim((0, radius))
-        plt.colorbar()
-        plt.title('Temperature distribution (SOR)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/cartesian_T_map_SOR_{N}x{M}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/cartesian_T_map_SOR_{N}x{M}.png'
+        title = 'Temperature distribution - SOR ($T(x,y)$)'
+        plot_cartesian_colormap(radius * x_vals_distrib, radius * y_vals_distrib, solution=T_0 + (T_1 - T_0) * sor_sol,
+                                filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        plt.figure(figsize=(12, 8))
-        plt.imshow((T_1-T_0)*sor_error, extent=domain_0, cmap='viridis', interpolation='nearest')
-        # Plot grid
-        for x in x_grid_0:
-            plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
-        for y in y_grid_0:
-            plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
-        # Plot domain
-        plt.plot(x_circle, y_circle, '-k', linewidth=2)
-        plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
-        plt.xlim((-radius, radius))
-        plt.ylim((0, radius))
-        plt.colorbar()
-        plt.title('Temperature error (SOR)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - SOR ($\Delta T(x,y)$)'
+        plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=(T_1 - T_0) * sor_error,
+                                filename=filename, title=title)
+
+        # Non-dimensional plots
+        # Plot Temperature map obtained with SOR method
+        filename = f'./Figures/cmaps_adim/cartesian_T_map_SOR_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - SOR ($u(\\xi,\\eta)$)'
+        plot_cartesian_colormap(x_vals_distrib, y_vals_distrib, solution=sor_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with SOR method
+        filename = f'./Figures/cmaps_adim/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - SOR ($\Delta u(\\xi,\\eta)$)'
+        plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=sor_error, filename=filename, title=title)

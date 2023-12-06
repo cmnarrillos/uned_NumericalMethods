@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from task_3_functions import fourier_series_analytical_sol, polar_laplace_eq_df_system, document_test, \
-                             get_error_diff_grids, jacobi_matrix, gs_matrix, sor_matrix
+                             get_error_diff_grids, jacobi_matrix, gs_matrix, sor_matrix, plot_polar_colormap
 
 # Try to import from the current folder; if not found, import from the parent folder
 try:
@@ -25,13 +25,15 @@ if not os.path.exists('./Figures/'):
     os.makedirs('./Figures/')
 if not os.path.exists('./Figures/cmaps/'):
     os.makedirs('./Figures/cmaps/')
+if not os.path.exists('./Figures/cmaps_adim/'):
+    os.makedirs('./Figures/cmaps_adim/')
 if not os.path.exists('./results/'):
     os.makedirs('./results/')
 
 
 # Define general parameters of the problem:
-N_latex = 9
-M_latex = 18
+N_latex = 3
+M_latex = 6
 rho_range = (0, 1)
 theta_range = (0, np.pi)
 boundary_conditions = [0, 1, 0, 0]
@@ -42,18 +44,19 @@ radius = 1
 T_0 = -10
 T_1 = 90
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]#, 13, 14, 15, 16, 17, 18, 19, 20]
-subintervals = [5]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 # What to plot
 plt_gral = False
 plt_output = True
+if not plt_gral and plt_output:
+    subintervals = [subintervals[-1]]
 
 # Which methods to run
 use_LU = True
 use_Jacobi = False
-use_GS = True
-use_SOR = True
+use_GS = False
+use_SOR = False
 
 # Initialize lists to store general vars
 if use_LU:
@@ -83,6 +86,10 @@ if use_SOR:
     sor_maxerr = []
     sor_texe_aitken = []
     sor_niter_aitken = []
+# Needed afterwards
+jacobi_failed = True
+gs_failed = True
+sor_failed = True
 
 
 # Obtain the analytical solution at the points of the grid
@@ -212,11 +219,13 @@ for n_subint in subintervals:
                    f'Obtained using Jacobi method for linear system solving ({niter} iterations for convergence)'
             document_test(filename=filename, solution=jacobi_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
+            jacobi_failed = False
 
         except RuntimeError as e:
             # Handle the exception (e.g., print an error message)
             print(f"Error: {e}")
             print()
+            jacobi_failed = True
 
     # Solve the system using Gauss-Seidel iterative method
     if use_GS:
@@ -272,11 +281,13 @@ for n_subint in subintervals:
                    f'Obtained using Gauss-Seidel method for linear system solving ({niter} iterations for convergence)'
             document_test(filename=filename, solution=gs_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
+            gs_failed = False
 
         except RuntimeError as e:
             # Handle the exception (e.g., print an error message)
             print(f"Error: {e}")
             print()
+            gs_failed = True
 
 
     # Solve the system using SOR iterative method
@@ -335,11 +346,13 @@ for n_subint in subintervals:
                    f'({niter} iterations for convergence)'
             document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(N_latex, M_latex),
                                 analytical_sol=analytical_sol, n_terms=N_Fourier)
+            sor_failed = False
 
         except RuntimeError as e:
             # Handle the exception (e.g., print an error message)
             print(f"Error: {e}")
             print()
+            sor_failed = True
 
 
 # Plot general stats
@@ -497,207 +510,118 @@ if plt_gral & len(subintervals)>1:
 
 # Plot distribution of temperature
 if plt_output:
-    rho_vals_1 = np.linspace(0, 1, N+1)
-    theta_vals_1 = np.linspace(0, np.pi, M+1)
+    rho_vals_distrib = np.linspace(0, 1, N + 1)
+    theta_vals_distrib = np.linspace(0, np.pi, M + 1)
+
+    rho_vals_ref = rho_vals
+    theta_vals_ref = theta_vals
 
     # Plot analytical temperature distribution
-    fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-    # Plot the matrix using a colormap
-    c = ax.pcolormesh(theta_vals, radius*rho_vals, T_0 + (T_1-T_0)*analytical_sol, cmap='viridis')
-    # Set theta limits to show only 1st and 2nd quadrants
-    ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-    ax.set_theta_direction(1)  # Set theta direction counterclockwise
-    ax.set_thetamin(0)  # Set minimum theta value
-    ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-    # Set the limits for the radial axis
-    ax.set_ylim(0, radius)
-    for rho in rho_vals:
-        ax.plot(theta_vals, [radius*rho] * len(theta_vals), '-w', linewidth=0.25)
-    for theta in theta_vals:
-        ax.plot([theta] * len(rho_vals), radius*rho_vals, '-w', linewidth=0.25)
-    # Remove default grid
-    ax.grid(False)
-    # Add colorbar for reference
-    fig.colorbar(c, ax=ax)
-    plt.title('Temperature distribution (analytical)', fontsize=18)
-    plt.savefig(f'./Figures/cmaps/polar_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png', bbox_inches='tight')
+    filename = f'./Figures/cmaps/polar_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    title = 'Temperature distribution - Analytical ($T(r,\\theta)$)'
+    plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=T_0 + (T_1 - T_0) * analytical_sol,
+                        filename=filename, title=title)
+
+    # Non-dimensional plot
+    # Plot Temperature map obtained with LU method
+    filename = f'./Figures/cmaps_adim/polar_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    title = 'Temperature non-dimensional distribution - Analytical ($u(\\rho,\\theta)$)'
+    plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=analytical_sol, filename=filename, title=title)
 
     if use_LU:
         # Plot Temperature map obtained with LU method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals_1, radius * rho_vals_1, T_0 + (T_1 - T_0) * lu_sol, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals_1:
-            ax.plot(theta_vals_1, [radius * rho] * len(theta_vals_1), '-w', linewidth=0.25)
-        for theta in theta_vals_1:
-            ax.plot([theta] * len(rho_vals_1), radius * rho_vals_1, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature distribution (LU)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_T_map_LU_{N}x{M}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_T_map_LU_{N}x{M}.png'
+        title = 'Temperature distribution - LU ($T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_distrib, theta_vals_distrib, solution=T_0 + (T_1 - T_0) * lu_sol,
+                            filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals, radius * rho_vals, (T_1 - T_0) * lu_error, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals:
-            ax.plot(theta_vals, [radius * rho] * len(theta_vals), '-w', linewidth=0.25)
-        for theta in theta_vals:
-            ax.plot([theta] * len(rho_vals), radius * rho_vals, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature error (LU)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - LU ($\Delta T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * lu_error, filename=filename,
+                            title=title)
 
-    if use_Jacobi:
+        # Non-dimensional plots
+        # Plot Temperature map obtained with LU method
+        filename = f'./Figures/cmaps_adim/polar_T_map_LU_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - LU ($u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=lu_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with LU method
+        filename = f'./Figures/cmaps_adim/polar_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - LU ($\Delta u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=lu_error, filename=filename, title=title)
+
+    if use_Jacobi & (not jacobi_failed):
         # Plot Temperature map obtained with Jacobi method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals_1, radius * rho_vals_1, T_0 + (T_1 - T_0) * jacobi_sol, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals_1:
-            ax.plot(theta_vals_1, [radius * rho] * len(theta_vals_1), '-w', linewidth=0.25)
-        for theta in theta_vals_1:
-            ax.plot([theta] * len(rho_vals_1), radius * rho_vals_1, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature distribution (Jacobi)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_T_map_Jacobi_{N}x{M}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_T_map_Jacobi_{N}x{M}.png'
+        title = 'Temperature distribution - Jacobi ($T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_distrib, theta_vals_distrib, solution=T_0 + (T_1 - T_0) * jacobi_sol,
+                            filename=filename, title=title)
 
         # Plot Error map obtained with Jacobi method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals, radius * rho_vals, (T_1 - T_0) * jacobi_error, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals:
-            ax.plot(theta_vals, [radius * rho] * len(theta_vals), '-w', linewidth=0.25)
-        for theta in theta_vals:
-            ax.plot([theta] * len(rho_vals), radius * rho_vals, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature error (Jacobi)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_errT_map_Jacobi_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_errT_map_Jacobi_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - Jacobi ($\Delta T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * jacobi_error,
+                            filename=filename, title=title)
 
-    if use_GS:
-        # Plot Temperature map obtained with LU method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals_1, radius * rho_vals_1, T_0 + (T_1 - T_0) * gs_sol, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals_1:
-            ax.plot(theta_vals_1, [radius * rho] * len(theta_vals_1), '-w', linewidth=0.25)
-        for theta in theta_vals_1:
-            ax.plot([theta] * len(rho_vals_1), radius * rho_vals_1, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature distribution (Gauss-Seidel)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_T_map_GS_{N}x{M}.png', bbox_inches='tight')
+        # Non-dimensional plots
+        # Plot Temperature map obtained with Jacobi method
+        filename = f'./Figures/cmaps_adim/polar_T_map_Jacobi_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - Jacobi ($u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=jacobi_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with Jacobi method
+        filename = f'./Figures/cmaps_adim/polar_errT_map_Jacobi_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - Jacobi ($\Delta u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=jacobi_error, filename=filename, title=title)
+
+    if use_GS & (not gs_failed):
+        # Plot Temperature map obtained with GS method
+        filename = f'./Figures/cmaps/polar_T_map_GS_{N}x{M}.png'
+        title = 'Temperature distribution - GS ($T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_distrib, theta_vals_distrib, solution=T_0 + (T_1 - T_0) * gs_sol,
+                            filename=filename, title=title)
 
         # Plot Error map obtained with GS method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals, radius * rho_vals, (T_1 - T_0) * gs_error, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals:
-            ax.plot(theta_vals, [radius * rho] * len(theta_vals), '-w', linewidth=0.25)
-        for theta in theta_vals:
-            ax.plot([theta] * len(rho_vals), radius * rho_vals, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature error (Gauss-Seidel)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_errT_map_GS_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_errT_map_GS_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - GS ($\Delta T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * gs_error, filename=filename,
+                            title=title)
 
-    if use_SOR:
+        # Non-dimensional plots
+        # Plot Temperature map obtained with GS method
+        filename = f'./Figures/cmaps_adim/polar_T_map_GS_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - GS ($u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=gs_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with GS method
+        filename = f'./Figures/cmaps_adim/polar_errT_map_GS_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - GS ($\Delta u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=gs_error, filename=filename, title=title)
+
+    if use_SOR & (not sor_failed):
         # Plot Temperature map obtained with SOR method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals_1, radius * rho_vals_1, T_0 + (T_1 - T_0) * sor_sol, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals_1:
-            ax.plot(theta_vals_1, [radius * rho] * len(theta_vals_1), '-w', linewidth=0.25)
-        for theta in theta_vals_1:
-            ax.plot([theta] * len(rho_vals_1), radius * rho_vals_1, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature distribution (SOR)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_T_map_SOR_{N}x{M}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_T_map_SOR_{N}x{M}.png'
+        title = 'Temperature distribution - SOR ($T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_distrib, theta_vals_distrib, solution=T_0 + (T_1 - T_0) * sor_sol,
+                            filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
-        # Plot the matrix using a colormap
-        c = ax.pcolormesh(theta_vals, radius * rho_vals, (T_1 - T_0) * sor_error, cmap='viridis')
-        # Set theta limits to show only 1st and 2nd quadrants
-        ax.set_theta_zero_location('E')  # Set 0 degrees to the right
-        ax.set_theta_direction(1)  # Set theta direction counterclockwise
-        ax.set_thetamin(0)  # Set minimum theta value
-        ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
-        # Set the limits for the radial axis
-        ax.set_ylim(0, radius)
-        for rho in rho_vals:
-            ax.plot(theta_vals, [radius * rho] * len(theta_vals), '-w', linewidth=0.25)
-        for theta in theta_vals:
-            ax.plot([theta] * len(rho_vals), radius * rho_vals, '-w', linewidth=0.25)
-        # Remove default grid
-        ax.grid(False)
-        # Add colorbar for reference
-        fig.colorbar(c, ax=ax)
-        plt.title('Temperature error (SOR)', fontsize=18)
-        plt.savefig(f'./Figures/cmaps/polar_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png', bbox_inches='tight')
+        filename = f'./Figures/cmaps/polar_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature error - SOR ($\Delta T(r,\\theta)$)'
+        plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * sor_error, filename=filename,
+                            title=title)
+
+        # Non-dimensional plots
+        # Plot Temperature map obtained with SOR method
+        filename = f'./Figures/cmaps_adim/polar_T_map_SOR_{N}x{M}.png'
+        title = 'Temperature non-dimensional distribution - SOR ($u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=sor_sol, filename=filename, title=title)
+
+        # Plot Error map obtained with SOR method
+        filename = f'./Figures/cmaps_adim/polar_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        title = 'Temperature non-dimensional error - SOR ($\Delta u(\\rho,\\theta)$)'
+        plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=sor_error, filename=filename, title=title)
+
+

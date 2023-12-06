@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from datetime import datetime
 import warnings
 
@@ -482,3 +483,79 @@ def unpack_cartesian(solution, n, m, bcs):
     rearranged_solution[0, :] = bcs[0]
 
     return rearranged_solution
+
+
+def plot_polar_colormap(rho_vals, theta_vals, solution, filename='', title=''):
+    """
+    Creates standard plots from polar solution in matrix form
+
+    Args:
+        rho_vals (np.ndarray/list): list of rho values to plot
+        theta_vals (np.ndarray/list): list of theta values to plot
+        solution (np.ndarray): array with solution per each rho,theta
+        filename (str): name of the file to save the figure
+        title (str): title of the figure
+
+    Returns:
+        Creates a colormap and saves it as filename
+    """
+    fig, ax = plt.subplots(figsize=(12, 8), subplot_kw={'projection': 'polar'})
+    # Plot the matrix using a colormap
+    c = ax.pcolormesh(theta_vals, rho_vals, solution, cmap='viridis')
+    # Set theta limits to show only 1st and 2nd quadrants
+    ax.set_theta_zero_location('E')  # Set 0 degrees to the right
+    ax.set_theta_direction(1)  # Set theta direction counterclockwise
+    ax.set_thetamin(0)  # Set minimum theta value
+    ax.set_thetamax(180)  # Set maximum theta value (180 degrees)
+    # Set the limits for the radial axis
+    ax.set_ylim(0, np.max(rho_vals))
+    for rho in rho_vals:
+        ax.plot(theta_vals, [rho] * len(theta_vals), '-w', linewidth=0.25)
+    for theta in theta_vals:
+        ax.plot([theta] * len(rho_vals), rho_vals, '-w', linewidth=0.25)
+    # Remove default grid
+    ax.grid(False)
+    # Add colorbar for reference
+    fig.colorbar(c, ax=ax)
+    plt.title(title, fontsize=18)
+    plt.savefig(filename, bbox_inches='tight')
+
+
+def plot_cartesian_colormap(x_vals, y_vals, solution, filename='', title=''):
+    """
+    Creates standard plots from cartesian solution in matrix form
+
+    Args:
+        x_vals (np.ndarray/list): list of x values to plot
+        y_vals (np.ndarray/list): list of y values to plot
+        solution (np.ndarray): array with solution per each rho,theta
+        filename (str): name of the file to save the figure
+        title (str): title of the figure
+
+    Returns:
+        Creates a colormap and saves it as filename
+    """
+    radius = max(np.max(x_vals), np.max(y_vals))
+    n = x_vals.size - 1
+    m = y_vals.size - 1
+
+    # Auxiliar variables for plotting
+    x_circle = [radius * np.cos(theta) for theta in np.linspace(0, np.pi, 1001)]
+    y_circle = [radius * np.sin(theta) for theta in np.linspace(0, np.pi, 1001)]
+    domain = (-radius*(1 + 1/n), radius*(1 + 1/n), radius*(1 + 0.5/m), -radius*0.5/m)
+
+    plt.figure(figsize=(12, 8))
+    plt.imshow(solution, extent=domain, cmap='viridis', interpolation='nearest')
+    # Plot grid
+    for x in x_vals:
+        plt.plot([x, x], [0, radius], '-w', linewidth=0.25)
+    for y in y_vals:
+        plt.plot([-radius, radius], [y, y], '-w', linewidth=0.25)
+    # Plot domain
+    plt.plot(x_circle, y_circle, '-k', linewidth=2)
+    plt.plot([-radius, radius], [0, 0], '-k', linewidth=2)
+    plt.xlim((-radius, radius))
+    plt.ylim((0, radius))
+    plt.colorbar()
+    plt.title(title, fontsize=18)
+    plt.savefig(filename, bbox_inches='tight')
