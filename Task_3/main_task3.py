@@ -32,8 +32,8 @@ if not os.path.exists('./results/'):
 
 
 # Define general parameters of the problem:
-N_latex = 3
-M_latex = 6
+N_mesh = 3
+M_mesh = 6
 rho_range = (0, 1)
 theta_range = (0, np.pi)
 boundary_conditions = [0, 1, 0, 0]
@@ -44,7 +44,7 @@ radius = 1
 T_0 = -10
 T_1 = 90
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 # What to plot
 plt_gral = False
@@ -93,8 +93,8 @@ sor_failed = True
 
 
 # Obtain the analytical solution at the points of the grid
-N = N_latex
-M = M_latex
+N = N_mesh
+M = M_mesh
 
 rho_vals = np.linspace(rho_range[0], rho_range[-1], N+1)
 theta_vals = np.linspace(theta_range[0], theta_range[-1], M+1)
@@ -115,7 +115,7 @@ info = f'Analytical solution of Laplace eq in polar coordinates over a mesh with
        f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
        f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
        f'using {N_Fourier} terms of the series: u(rho,theta) = sum_[n odd] 4/(n*pi)*rho^n*sin(n*theta)'
-document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(N_latex, M_latex))
+document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(N_mesh, M_mesh))
 
 
 for n_subint in subintervals:
@@ -123,8 +123,8 @@ for n_subint in subintervals:
     print()
     print()
     print(f'Number of subintervals between req points: {n_subint}')
-    N = N_latex * n_subint
-    M = M_latex * n_subint
+    N = N_mesh * n_subint
+    M = M_mesh * n_subint
     print(f'Initializing polar finite differences system: [{N}x{M}] grid')
     A, b = polar_laplace_eq_df_system(N, M, rho_range, theta_range, boundary_conditions)
 
@@ -150,7 +150,7 @@ for n_subint in subintervals:
         lu_sol[:, M] = boundary_conditions[3]
 
         # Compare wrt analytical solution to get error:
-        lu_error = get_error_diff_grids(solution=lu_sol, analytical_sol=analytical_sol, aim_shape=(N_latex+1, M_latex+1))
+        lu_error = get_error_diff_grids(solution=lu_sol, analytical_sol=analytical_sol, aim_shape=(N_mesh + 1, M_mesh + 1))
         lu_maxerr.append(np.max(np.abs(lu_error)))
         print(f' max eror: {lu_maxerr[-1]}')
         print()
@@ -161,7 +161,7 @@ for n_subint in subintervals:
                f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                f'Obtained using LU decomposition for linear system solving'
-        document_test(filename=filename, solution=lu_sol, info=info, latex_shape=(N_latex, M_latex),
+        document_test(filename=filename, solution=lu_sol, info=info, latex_shape=(N_mesh, M_mesh),
                       analytical_sol=analytical_sol, n_terms=N_Fourier)
 
 
@@ -206,7 +206,7 @@ for n_subint in subintervals:
 
             # Compare wrt analytical solution to get error:
             jacobi_error = get_error_diff_grids(solution=jacobi_sol, analytical_sol=analytical_sol,
-                                                aim_shape=(N_latex+1, M_latex+1))
+                                                aim_shape=(N_mesh + 1, M_mesh + 1))
             jacobi_maxerr.append(np.max(np.abs(jacobi_error)))
             print(f' max eror: {jacobi_maxerr[-1]}')
             print()
@@ -217,8 +217,8 @@ for n_subint in subintervals:
                    f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Jacobi method for linear system solving ({niter} iterations for convergence)'
-            document_test(filename=filename, solution=jacobi_sol, info=info, latex_shape=(N_latex, M_latex),
-                                analytical_sol=analytical_sol, n_terms=N_Fourier)
+            document_test(filename=filename, solution=jacobi_sol, info=info, latex_shape=(N_mesh, M_mesh),
+                          analytical_sol=analytical_sol, n_terms=N_Fourier)
             jacobi_failed = False
 
         except RuntimeError as e:
@@ -268,7 +268,7 @@ for n_subint in subintervals:
 
             # Compare wrt analytical solution to get error:
             gs_error = get_error_diff_grids(solution=gs_sol, analytical_sol=analytical_sol,
-                                            aim_shape=(N_latex+1, M_latex+1))
+                                            aim_shape=(N_mesh + 1, M_mesh + 1))
             gs_maxerr.append(np.max(np.abs(gs_error)))
             print(f' max eror: {gs_maxerr[-1]}')
             print()
@@ -279,8 +279,8 @@ for n_subint in subintervals:
                    f' - {N} evenly spaced intervals ({N+1} points) between [{rho_range[0], rho_range[-1]}] in r\n' \
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Gauss-Seidel method for linear system solving ({niter} iterations for convergence)'
-            document_test(filename=filename, solution=gs_sol, info=info, latex_shape=(N_latex, M_latex),
-                                analytical_sol=analytical_sol, n_terms=N_Fourier)
+            document_test(filename=filename, solution=gs_sol, info=info, latex_shape=(N_mesh, M_mesh),
+                          analytical_sol=analytical_sol, n_terms=N_Fourier)
             gs_failed = False
 
         except RuntimeError as e:
@@ -332,7 +332,7 @@ for n_subint in subintervals:
 
             # Compare wrt analytical solution to get error:
             sor_error = get_error_diff_grids(solution=sor_sol, analytical_sol=analytical_sol,
-                                             aim_shape=(N_latex+1, M_latex+1))
+                                             aim_shape=(N_mesh + 1, M_mesh + 1))
             sor_maxerr.append(np.max(np.abs(sor_error)))
             print(f' max eror: {sor_maxerr[-1]}')
             print()
@@ -344,8 +344,8 @@ for n_subint in subintervals:
                    f' - {M} evenly spaced intervals ({M+1} points) between [{theta_range[0], theta_range[-1]}] in theta\n' \
                    f'Obtained using Succesive Over-Relaxation (SOR) method for linear system solving with w={w} ' \
                    f'({niter} iterations for convergence)'
-            document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(N_latex, M_latex),
-                                analytical_sol=analytical_sol, n_terms=N_Fourier)
+            document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(N_mesh, M_mesh),
+                          analytical_sol=analytical_sol, n_terms=N_Fourier)
             sor_failed = False
 
         except RuntimeError as e:
@@ -517,14 +517,14 @@ if plt_output:
     theta_vals_ref = theta_vals
 
     # Plot analytical temperature distribution
-    filename = f'./Figures/cmaps/polar_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    filename = f'./Figures/cmaps/polar_T_map_{N_mesh}x{M_mesh}_{N_Fourier}terms.png'
     title = 'Temperature distribution - Analytical ($T(r,\\theta)$)'
     plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=T_0 + (T_1 - T_0) * analytical_sol,
                         filename=filename, title=title)
 
     # Non-dimensional plot
     # Plot Temperature map obtained with LU method
-    filename = f'./Figures/cmaps_adim/polar_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    filename = f'./Figures/cmaps_adim/polar_T_map_{N_mesh}x{M_mesh}_{N_Fourier}terms.png'
     title = 'Temperature non-dimensional distribution - Analytical ($u(\\rho,\\theta)$)'
     plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=analytical_sol, filename=filename, title=title)
 
@@ -536,7 +536,7 @@ if plt_output:
                             filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        filename = f'./Figures/cmaps/polar_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/polar_errT_map_LU_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - LU ($\Delta T(r,\\theta)$)'
         plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * lu_error, filename=filename,
                             title=title)
@@ -548,7 +548,7 @@ if plt_output:
         plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=lu_sol, filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        filename = f'./Figures/cmaps_adim/polar_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/polar_errT_map_LU_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - LU ($\Delta u(\\rho,\\theta)$)'
         plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=lu_error, filename=filename, title=title)
 
@@ -560,7 +560,7 @@ if plt_output:
                             filename=filename, title=title)
 
         # Plot Error map obtained with Jacobi method
-        filename = f'./Figures/cmaps/polar_errT_map_Jacobi_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/polar_errT_map_Jacobi_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - Jacobi ($\Delta T(r,\\theta)$)'
         plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * jacobi_error,
                             filename=filename, title=title)
@@ -572,7 +572,7 @@ if plt_output:
         plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=jacobi_sol, filename=filename, title=title)
 
         # Plot Error map obtained with Jacobi method
-        filename = f'./Figures/cmaps_adim/polar_errT_map_Jacobi_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/polar_errT_map_Jacobi_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - Jacobi ($\Delta u(\\rho,\\theta)$)'
         plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=jacobi_error, filename=filename, title=title)
 
@@ -584,7 +584,7 @@ if plt_output:
                             filename=filename, title=title)
 
         # Plot Error map obtained with GS method
-        filename = f'./Figures/cmaps/polar_errT_map_GS_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/polar_errT_map_GS_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - GS ($\Delta T(r,\\theta)$)'
         plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * gs_error, filename=filename,
                             title=title)
@@ -596,7 +596,7 @@ if plt_output:
         plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=gs_sol, filename=filename, title=title)
 
         # Plot Error map obtained with GS method
-        filename = f'./Figures/cmaps_adim/polar_errT_map_GS_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/polar_errT_map_GS_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - GS ($\Delta u(\\rho,\\theta)$)'
         plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=gs_error, filename=filename, title=title)
 
@@ -608,7 +608,7 @@ if plt_output:
                             filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        filename = f'./Figures/cmaps/polar_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/polar_errT_map_SOR_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - SOR ($\Delta T(r,\\theta)$)'
         plot_polar_colormap(radius * rho_vals_ref, theta_vals_ref, solution=(T_1 - T_0) * sor_error, filename=filename,
                             title=title)
@@ -620,7 +620,7 @@ if plt_output:
         plot_polar_colormap(rho_vals_distrib, theta_vals_distrib, solution=sor_sol, filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        filename = f'./Figures/cmaps_adim/polar_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/polar_errT_map_SOR_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - SOR ($\Delta u(\\rho,\\theta)$)'
         plot_polar_colormap(rho_vals_ref, theta_vals_ref, solution=sor_error, filename=filename, title=title)
 

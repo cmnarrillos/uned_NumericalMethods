@@ -32,8 +32,8 @@ if not os.path.exists('./results/'):
 
 
 # Define general parameters of the problem:
-N_latex = 6
-M_latex = 3
+N_mesh = 6
+M_mesh = 3
 radius = 1
 T_0 = -10
 T_1 = 90
@@ -41,8 +41,7 @@ boundary_conditions = [0, 1]
 N_Fourier = 100001
 n_tries = 15
 
-subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-subintervals = [5]
+subintervals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 # What to plot
 plt_gral = False
@@ -72,8 +71,8 @@ sor_failed = True
 
 
 # Obtain the analytical solution at the points of the grid
-N = N_latex
-M = M_latex
+N = N_mesh
+M = M_mesh
 
 x_vals = np.linspace(-1, 1, N+1)
 y_vals = np.linspace(0, 1, M+1)
@@ -96,7 +95,7 @@ info = f'Analytical solution of Laplace eq in cartesian coordinates over a mesh 
        f' - {N} evenly spaced intervals ({N+1} points) between [{-radius, radius}] in x\n' \
        f' - {M} evenly spaced intervals ({M+1} points) between [{0, radius}] in y\n' \
        f'using {N_Fourier} terms of the series: u(rho,theta) = sum_[n odd] 4/(n*pi)*rho^n*sin(n*theta)'
-document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(M_latex, N_latex))
+document_test(filename=filename, solution=analytical_sol, info=info, latex_shape=(M_mesh, N_mesh))
 
 
 for n_subint in subintervals:
@@ -104,8 +103,8 @@ for n_subint in subintervals:
     print()
     print()
     print(f'Number of subintervals between req points: {n_subint}')
-    N = N_latex * n_subint
-    M = M_latex * n_subint
+    N = N_mesh * n_subint
+    M = M_mesh * n_subint
     print(f'Initializing cartesian finite differences system: [{N}x{M}] grid')
     A, b = cartesian_laplace_eq_df_system(N, M, radius, boundary_conditions)
 
@@ -125,7 +124,7 @@ for n_subint in subintervals:
 
         # Compare wrt analytical solution to get error:
         lu_error = get_error_diff_grids(solution=lu_sol, analytical_sol=analytical_sol,
-                                        aim_shape=(M_latex + 1, N_latex + 1))
+                                        aim_shape=(M_mesh + 1, N_mesh + 1))
         lu_maxerr.append(np.max(np.abs(lu_error)))
         print(f' max eror: {lu_maxerr[-1]}')
         print()
@@ -136,7 +135,7 @@ for n_subint in subintervals:
                f' - {N} evenly spaced intervals ({N+1} points) between [{-radius, radius}] in x\n' \
                f' - {M} evenly spaced intervals ({M+1} points) between [{0, radius}] in y\n' \
                f'Obtained using LU decomposition for linear system solving'
-        document_test(filename=filename, solution=lu_sol, info=info, latex_shape=(M_latex, N_latex),
+        document_test(filename=filename, solution=lu_sol, info=info, latex_shape=(M_mesh, N_mesh),
                       analytical_sol=analytical_sol, n_terms=N_Fourier)
 
     # Apply SOR method
@@ -168,7 +167,7 @@ for n_subint in subintervals:
 
             # Compare wrt analytical solution to get error:
             sor_error = get_error_diff_grids(solution=sor_sol, analytical_sol=analytical_sol,
-                                             aim_shape=(M_latex+1, N_latex+1))
+                                             aim_shape=(M_mesh + 1, N_mesh + 1))
             sor_maxerr.append(np.max(np.abs(sor_error)))
             print(f' max eror: {sor_maxerr[-1]}')
             print()
@@ -180,7 +179,7 @@ for n_subint in subintervals:
                    f' - {M} evenly spaced intervals ({M+1} points) between [{0, radius}] in y\n' \
                    f'Obtained using Succesive Over-Relaxation (SOR) method for linear system solving with w={w} ' \
                    f'({niter} iterations for convergence)'
-            document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(M_latex, N_latex),
+            document_test(filename=filename, solution=sor_sol, info=info, latex_shape=(M_mesh, N_mesh),
                           analytical_sol=analytical_sol, n_terms=N_Fourier)
             sor_failed = False
 
@@ -298,14 +297,14 @@ if plt_output:
     y_vals_ref = y_vals
 
     # Plot analytical temperature distribution
-    filename = f'./Figures/cmaps/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    filename = f'./Figures/cmaps/cartesian_T_map_{N_mesh}x{M_mesh}_{N_Fourier}terms.png'
     title = 'Temperature distribution - Analytical ($T(x, y)$)'
     plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=T_0 + (T_1 - T_0) * analytical_sol,
                             filename=filename, title=title)
 
     # Non-dimensional plot
     # Plot Temperature map obtained with LU method
-    filename = f'./Figures/cmaps_adim/cartesian_T_map_{N_latex}x{M_latex}_{N_Fourier}terms.png'
+    filename = f'./Figures/cmaps_adim/cartesian_T_map_{N_mesh}x{M_mesh}_{N_Fourier}terms.png'
     title = 'Temperature non-dimensional distribution - Analytical ($u(\\xi,\\eta)$)'
     plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=analytical_sol, filename=filename, title=title)
 
@@ -317,7 +316,7 @@ if plt_output:
                                 filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        filename = f'./Figures/cmaps/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/cartesian_errT_map_LU_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - LU ($\Delta T(x,y)$)'
         plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=(T_1 - T_0) * lu_error,
                                 filename=filename, title=title)
@@ -329,7 +328,7 @@ if plt_output:
         plot_cartesian_colormap(x_vals_distrib, y_vals_distrib, solution=lu_sol, filename=filename, title=title)
 
         # Plot Error map obtained with LU method
-        filename = f'./Figures/cmaps_adim/cartesian_errT_map_LU_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/cartesian_errT_map_LU_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - LU ($\Delta u(\\xi,\\eta)$)'
         plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=lu_error, filename=filename, title=title)
 
@@ -341,7 +340,7 @@ if plt_output:
                                 filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        filename = f'./Figures/cmaps/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps/cartesian_errT_map_SOR_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature error - SOR ($\Delta T(x,y)$)'
         plot_cartesian_colormap(radius * x_vals_ref, radius * y_vals_ref, solution=(T_1 - T_0) * sor_error,
                                 filename=filename, title=title)
@@ -353,6 +352,6 @@ if plt_output:
         plot_cartesian_colormap(x_vals_distrib, y_vals_distrib, solution=sor_sol, filename=filename, title=title)
 
         # Plot Error map obtained with SOR method
-        filename = f'./Figures/cmaps_adim/cartesian_errT_map_SOR_{N}x{M}_vs_{N_latex}x{M_latex}.png'
+        filename = f'./Figures/cmaps_adim/cartesian_errT_map_SOR_{N}x{M}_vs_{N_mesh}x{M_mesh}.png'
         title = 'Temperature non-dimensional error - SOR ($\Delta u(\\xi,\\eta)$)'
         plot_cartesian_colormap(x_vals_ref, y_vals_ref, solution=sor_error, filename=filename, title=title)
