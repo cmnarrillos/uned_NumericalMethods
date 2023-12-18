@@ -449,3 +449,20 @@ def crout_tridiagonal_solver(diag, low, up, d):
         x[i] = (y[i] - up[i] * x[i + 1]) / U[i][i]
 
     return x
+
+
+def dirac_delta(x, tol=1.e-6):
+    """
+    Define the Dirac delta function.
+
+    Args:
+        x (float): Input value
+        tol (float): Tolerance (default is 1e-6)
+
+    Returns:
+        float: Dirac delta value at x
+    """
+    if abs(x) > tol:
+        return 0.0
+    else:
+        return (tol - abs(x)) / (tol ** 2)
