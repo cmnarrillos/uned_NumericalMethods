@@ -122,11 +122,23 @@ def solve_linear_system_with_lu_decomposition(A, b):
     Returns:
         x (numpy.ndarray): The solution vector that satisfies Ax = b.
     """
-    # Perform LU decomposition
-    L, U = lu_decomposition(A)
+    if check_tridiagonal(A):
+        # If matrix is tri-diagonal, use Crout method
+        # Extract diagonals from the coefficient matrix A
+        diag = np.diag(A)
+        low = np.diag(A, k=-1)
+        up = np.diag(A, k=1)
 
-    # Solve the linear system using LU decomposition
-    solution = lu_solve(L, U, b)
+        # Solve system using Crout method
+        solution = crout_tridiagonal_solver(diag, low, up, b)
+        print('System solved using Crout method as is more efficient for a tri-diagonal matrix')
+
+    else:
+        # Otherwise Perform LU decomposition
+        L, U = lu_decomposition(A)
+
+        # Solve the linear system using LU decomposition
+        solution = lu_solve(L, U, b)
 
     return solution
 
@@ -375,3 +387,65 @@ def inverse_lower_triangular(L):
         L_inv[i, :] /= L[i, i]
 
     return L_inv
+
+
+def check_tridiagonal(A, tolerance=1e-6):
+    """
+    Check if the matrix A is tridiagonal with a given tolerance.
+
+    Args:
+        A (numpy.ndarray): The matrix to be checked.
+        tolerance (float): Tolerance for considering off-diagonal elements as zero (default is 1e-6).
+
+    Returns:
+        is_tridiagonal (bool): True if A is tridiagonal, False otherwise.
+    """
+    n = len(A)
+
+    for i in range(n):
+        for j in range(n):
+            if abs(i - j) > 1 and abs(A[i, j]) > tolerance:
+                return False  # Element outside the tridiagonal is above the tolerance
+
+    return True
+
+
+def crout_tridiagonal_solver(diag, low, up, d):
+    """
+    Solve a tridiagonal linear system using the Crout method.
+
+    Args:
+        diag (numpy.ndarray): Main diagonal of the tridiagonal matrix.
+        low (numpy.ndarray): Lower diagonal of the tridiagonal matrix.
+        up (numpy.ndarray): Upper diagonal of the tridiagonal matrix.
+        d (numpy.ndarray): Right-hand side vector.
+
+    Returns:
+        x (numpy.ndarray): Solution vector.
+    """
+    n = len(d)
+
+    # Initialize the L and U matrices
+    L = np.zeros((n, n))
+    U = np.zeros((n, n))
+
+    # Decomposition
+    U[0][0] = diag[0]
+    for i in range(1, n):
+        L[i][i - 1] = low[i - 1] / U[i - 1][i - 1]
+        U[i][i] = diag[i] - L[i][i - 1] * up[i - 1]
+        L[i][i] = 1.0
+
+    # Forward substitution (Ly = d)
+    y = np.zeros(n)
+    y[0] = d[0]
+    for i in range(1, n):
+        y[i] = d[i] - L[i][i - 1] * y[i - 1]
+
+    # Backward substitution (Ux = y)
+    x = np.zeros(n)
+    x[n - 1] = y[n - 1] / U[n - 1][n - 1]
+    for i in range(n - 2, -1, -1):
+        x[i] = (y[i] - up[i] * x[i + 1]) / U[i][i]
+
+    return x
