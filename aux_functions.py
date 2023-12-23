@@ -466,3 +466,24 @@ def dirac_delta(x, tol=1.e-6):
         return 0.0
     else:
         return (tol - abs(x)) / (tol ** 2)
+
+
+def integrate_trapezoidal(x, fx, lims):
+    """
+    Numerical integration using the trapezoidal rule.
+
+    Parameters:
+        x (list or np.ndarray): Independent variable values.
+        fx (list or np.ndarray): Values of the function to integrate.
+        lims (list or tuple): Integration limits [a, b].
+
+    Returns:
+        float: Result of the numerical integration.
+    """
+    a, b = lims
+    h = (b - a) / (len(x) - 1)
+
+    integral = 0.5 * (fx[0] + fx[-1]) + sum(fx[1:-1])
+    integral *= h
+
+    return integral
