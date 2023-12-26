@@ -56,6 +56,36 @@ def iterative_pde_solver(u_0, u_BC, A, B, D_rhs, D_lhs, n_t):
     return np.append(np.insert(u, 0, u_BC[0]), u_BC[-1]), np.array(u_t, dtype=float)
 
 
+def prog_diff_method(u_0, u_BC, B, D_rhs, n_t):
+    """
+    Solve a PDE using finite differences general form given by:
+    A*u(i+1) = B*u(i)
+
+    Args:
+        u_0 (np.ndarray): vector with the initial condition
+        u_BC (np.ndarray): list the boundary conditions
+        B (np.ndarray): matrix of coefficients on the right hand side
+        D_lhs (np.ndarray): matrix of boundary conditions on the right hand side
+        n_t (int): number of timesteps to perform
+
+    Returns:
+        u (np.ndarray): vector at the end of the propagation
+        u_t (np.ndarray): matrix containing the evolution of u through the simulation
+    """
+    # copy/ store initial condition
+    u = u_0.copy()
+    u_t = [u_0]
+    # Remove boundaries, which are fixed
+    u = u[1:-1]
+
+    # Propagate the equation for n steps
+    for _ in range(n_t):
+        u = np.dot(B, u) + np.dot(D_rhs, u_BC)
+        u_t.append(np.append(np.insert(u, 0, u_BC[0]), u_BC[-1]))
+
+    return np.append(np.insert(u, 0, u_BC[0]), u_BC[-1]), np.array(u_t, dtype=float)
+
+
 def theta_method_neutron(n_x, dt, dx, c, d, theta=0.):
     """
     Function which creates the functions of the system
@@ -78,7 +108,7 @@ def theta_method_neutron(n_x, dt, dx, c, d, theta=0.):
         D_lhs (np.ndarray): matrix of boundary conditions on the right hand side
     """
     # Create elements of the diagonal
-    A = np.eye(n_x) * (1 + theta*c*dt + 2*theta*d*dt/dx**2)
+    A = np.eye(n_x) * (1 - theta*c*dt + 2*theta*d*dt/dx**2)
     B = np.eye(n_x) * (1 + (1-theta)*c*dt - 2*(1-theta)*d*dt/dx**2)
 
     # Create out-of-diagonal elements
