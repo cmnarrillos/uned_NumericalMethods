@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 
+from matplotlib.colors import LogNorm
+
 # Try to import from the current folder; if not found, import from the parent folder
 try:
     from aux_functions import check_tridiagonal, crout_tridiagonal_solver, solve_linear_system_with_lu_decomposition
@@ -99,7 +101,7 @@ def theta_method_neutron(n_x, dt, dx, c, d, theta=0.):
         theta (float): allows to select different methods:
             - theta = 0 --> Progressive differences
             - theta = 1 --> Regressive differences (unconditionally stable)
-            - theta = 0.5 --> Crank-Nicholson (unconditionally stable, 2nd order in t)
+            - theta = 0.5 --> Crank-Nicolson (unconditionally stable, 2nd order in t)
 
     Returns:
         A (np.ndarray): matrix of coefficients on the left hand side
@@ -130,3 +132,69 @@ def theta_method_neutron(n_x, dt, dx, c, d, theta=0.):
 
     return A, B, D_rhs, D_lhs
 
+
+def plot_cmap(title, filename, xlims, ylims, domain, u_evol):
+    """
+    Creates standard 2D plots showing the evolution of neutron density
+
+    Args:
+        title (str): title of the figure
+        filename (str): name of the file to save the figure
+        xlims (tuple/int): limits of the plot in x direction
+        ylims (tuple/int): limits of the plot in y direction
+        domain (tuple): tuple containing limits of the domain represented
+        u_evol (np.ndarray): array containing the evolution of the variable to plot
+
+    Returns:
+        Creates a colormap and saves it as filename
+    """
+
+    plt.figure(figsize=(12, 8))
+    plt.imshow(u_evol, extent=domain, cmap='viridis', interpolation='nearest',
+               norm=LogNorm(vmin=float(min(max(np.min(u_evol[-1, 1:-1]), 1e-7), 1e-3))))
+    plt.colorbar(label='Neutron density (Log Scale)')
+    plt.xlim(xlims)
+    plt.ylim(ylims)
+    plt.title(title, fontsize=18)
+    plt.xlabel('x', fontsize=14)
+    plt.ylabel('t', fontsize=14)
+    plt.savefig(filename, bbox_inches='tight')
+
+
+def plot_linear(title, filename, xlims, ylims, x_label, y_label, x, y_pd=None, y_rd=None, y_cn=None):
+    """
+    Creates standard linear plots showing the evolution of neutron density / solution at the end of simulation
+
+    Args:
+        title (str): title of the figure
+        filename (str): name of the file to save the figure
+        xlims (tuple/int): limits of the plot in x direction
+        ylims (tuple/int): limits of the plot in y direction
+        x_label (str): label of x axis in the plot
+        y_label (str): label of y axis in the plot
+        x (np.ndarray/list): 1D array containing the independent variable (x axis of the plot)
+        y_pd (np.ndarray/list): 1D array containing the result of the PD method (default=None)
+                                if None, that line will not appear in the plot
+        y_rd (np.ndarray/list): 1D array containing the result of the RD method (default=None)
+                                if None, that line will not appear in the plot
+        y_cn (np.ndarray/list): 1D array containing the result of the CN method (default=None)
+                                if None, that line will not appear in the plot
+
+    Returns:
+        Creates a colormap and saves it as filename
+    """
+    plt.figure(figsize=(12, 8))
+    if y_pd is not None:
+        plt.plot(x, y_pd, 'r-x', linewidth=0.75, markersize=1.5, label='Prog Diff')
+    if y_rd is not None:
+        plt.plot(x, y_rd, 'b-x', linewidth=0.75, markersize=1.5, label='Reg Diff')
+    if y_cn is not None:
+        plt.plot(x, y_cn, 'g-x', linewidth=0.75, markersize=1.5, label='C-N')
+    plt.xlim(xlims)
+    plt.ylim(ylims)
+    plt.xlabel(x_label, fontsize=14)
+    plt.ylabel(y_label, fontsize=14)
+    plt.title(title, fontsize=18)
+    plt.grid(which='both')
+    plt.legend(fontsize=14)
+    plt.savefig(filename, bbox_inches='tight')
