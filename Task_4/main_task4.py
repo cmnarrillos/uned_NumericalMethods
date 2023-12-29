@@ -14,12 +14,21 @@ except ImportError:
     sys.path.append(os.path.abspath('..'))
     from aux_functions import dirac_delta, integrate_trapezoidal
 
+
+def log_message(message, file=None):
+    print(message, file=file)
+    print(message)
+
+
+# Main starts here
+
 now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 if not os.path.exists('./Figures/'):
     os.makedirs('./Figures/')
 if not os.path.exists(f'./Figures/{now}/'):
     os.makedirs(f'./Figures/{now}/')
-
+# Open file to report
+fid = open(f'./Figures/{now}/results.txt', 'w')
 
 # Initialize parameters of the method
 L = 1
@@ -27,9 +36,9 @@ D = 1
 C = 1
 
 # Discretization
-n_x = 19
-d_t = 0.002
-n_t = 500
+n_x = 49
+d_t = 0.0001
+n_t = 10000
 t = np.linspace(0, n_t*d_t, n_t+1)
 
 # Boundary conditions
@@ -40,21 +49,19 @@ x = np.linspace(-L/2, L/2, n_x+2)
 d_x = L/(n_x+1)
 u_0 = np.array([dirac_delta(x_val, tol=d_x) for x_val in x])
 
-print()
-print('Problem initialized')
-print(f'L = {L}, D = {D}, C ={C}')
-print(f'dx = {d_x}, dt = {d_t}')
-print()
+log_message('\nProblem initialized', file=fid)
+log_message(f'L = {L}, D = {D}, C = {C}', file=fid)
+log_message(f'dx = {d_x}, dt = {d_t}', file=fid)
+log_message('\n', file=fid)
 
 # Check stability conditions:
-pd_stable = D*d_t/d_x**2 - C/2*d_t < 1/2
+pd_stable = D*d_t/d_x**2 - C/2*d_t <= 1/2
 if C < 1e-7:
     rd_stable = True
     cn_stable = True
 else:
     rd_stable = d_t < 1/C
     cn_stable = d_t < 2/C
-
 
 # Propagate evolution of the system
 
@@ -66,12 +73,12 @@ if pd_stable:
     # Propagate
     tinit = time.time()
     u_pd, u_pd_evolution = prog_diff_method(u_0=u_0, u_BC=u_BC, B=B, D_rhs=D_rhs, n_t=n_t)
-    print(f'Progresive differences propagated in {time.time() - tinit} s')
+    log_message(f'Progresive differences propagated in {time.time() - tinit} s', file=fid)
 
     # Get avg neutron density
     neutron_avg_pd = np.array([integrate_trapezoidal(x, u_step, lims=(-L/2, L/2)) for u_step in u_pd_evolution])
 else:
-    print('Progressive differences method cannot be applied for this relation of dt, dx')
+    log_message('Progressive differences method cannot be applied for this relation of dt, dx', file=fid)
     u_pd = None
     u_pd_evolution = np.array([None for _ in x])
     neutron_avg_pd = None
@@ -85,12 +92,12 @@ if rd_stable:
     # Propagate
     tinit = time.time()
     u_rd, u_rd_evolution = iterative_pde_solver(u_0=u_0, u_BC=u_BC, A=A, B=B, D_rhs=D_rhs, D_lhs=D_lhs, n_t=n_t)
-    print(f'Regressive differences propagated in {time.time() - tinit} s')
+    log_message(f'Regressive differences propagated in {time.time() - tinit} s', file=fid)
 
     # Get avg neutron density
     neutron_avg_rd = np.array([integrate_trapezoidal(x, u_step, lims=(-L/2, L/2)) for u_step in u_rd_evolution])
 else:
-    print('Regressive differences method cannot be applied for this dt given param C of the problem')
+    log_message('Regressive differences method cannot be applied for this dt given param C of the problem', file=fid)
     u_rd = None
     u_rd_evolution = np.array([None for _ in x])
     neutron_avg_rd = None
@@ -104,12 +111,12 @@ if cn_stable:
     # Propagate
     tinit = time.time()
     u_cn, u_cn_evolution = iterative_pde_solver(u_0=u_0, u_BC=u_BC, A=A, B=B, D_rhs=D_rhs, D_lhs=D_lhs, n_t=n_t)
-    print(f'Crank-Nicolson propagated in {time.time() - tinit} s')
+    log_message(f'Crank-Nicolson propagated in {time.time() - tinit} s', file=fid)
 
     # Get avg neutron density
     neutron_avg_cn = np.array([integrate_trapezoidal(x, u_step, lims=(-L/2, L/2)) for u_step in u_cn_evolution])
 else:
-    print('Regressive differences method cannot be applied for this dt given param C of the problem')
+    log_message('Regressive differences method cannot be applied for this dt given param C of the problem', file=fid)
     u_cn = None
     u_cn_evolution = np.array([None for _ in x])
     neutron_avg_cn = None
@@ -129,9 +136,9 @@ elif pd_stable:
 else:
     factor = 1
 neutron_avg_th_adj = factor * neutron_avg_th
-print()
-print(f'Adjustment factor: {factor}')
-print(f'Equivalent delay: {-np.log(factor)/(C - D*np.pi**2/L**2)}')
+log_message('\n', file=fid)
+log_message(f'Adjustment factor: {factor}', file=fid)
+log_message(f'Equivalent delay: {-np.log(factor)/(C - D*np.pi**2/L**2)}', file=fid)
 
 
 # Plot neutron density
@@ -161,20 +168,20 @@ domain = (-L/2 - d_x/2, L/2 + d_x/2, t[-1]+d_t/2, -d_t/2)
 
 # Progressive Diff
 if pd_stable:
-    filename = f'./Figures/{now}/cmap_PD_{C}_dx_{d_x}_dt_{d_t}.png'
+    filename = f'./Figures/{now}/cmap_PD_C_{C}_dx_{d_x}_dt_{d_t}.png'
     plot_cmap(u_evol=u_pd_evolution, domain=domain, title='Progressive Differences', filename=filename,
               xlims=(-L/2, L/2), ylims=(0, t[-1]))
 
 
 # Regressive Diff
 if rd_stable:
-    filename = f'./Figures/{now}/cmap_RD_{C}_dx_{d_x}_dt_{d_t}.png'
+    filename = f'./Figures/{now}/cmap_RD_C_{C}_dx_{d_x}_dt_{d_t}.png'
     plot_cmap(u_evol=u_rd_evolution, domain=domain, title='Regressive Differences', filename=filename,
               xlims=(-L/2, L/2), ylims=(0, t[-1]))
 
 # Crank-Nicolson
 if cn_stable:
-    filename = f'./Figures/{now}/cmap_CN_{C}_dx_{d_x}_dt_{d_t}.png'
+    filename = f'./Figures/{now}/cmap_CN_C_{C}_dx_{d_x}_dt_{d_t}.png'
     plot_cmap(u_evol=u_rd_evolution, domain=domain, title='Crank-Nicolson', filename=filename,
               xlims=(-L/2, L/2), ylims=(0, t[-1]))
 
@@ -219,3 +226,5 @@ filename = f'./Figures/{now}/neutron_evol_x4_C_{C}_dx_{d_x}_dt_{d_t}.png'
 plot_linear(x=t, y_pd=u_pd_evolution.T[idx], y_rd=u_rd_evolution.T[idx], y_cn=u_cn_evolution.T[idx],
             title=f'Solution at x={round(x[idx],2)}', filename=filename,
             xlims=(0, t[-1]), ylims=0, x_label='$t$', y_label='$n(t)$')
+
+fid.close()
