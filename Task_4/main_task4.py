@@ -33,12 +33,12 @@ fid = open(f'./Figures/{now}/results.txt', 'w')
 # Initialize parameters of the method
 L = 1
 D = 1
-C = 1
+C = np.pi**2
 
 # Discretization
-n_x = 49
-d_t = 0.0001
-n_t = 10000
+n_x = 499
+d_t = 0.001
+n_t = 100000
 t = np.linspace(0, n_t*d_t, n_t+1)
 
 # Boundary conditions
@@ -138,7 +138,7 @@ else:
 neutron_avg_th_adj = factor * neutron_avg_th
 log_message('\n', file=fid)
 log_message(f'Adjustment factor: {factor}', file=fid)
-log_message(f'Equivalent delay: {-np.log(factor)/(C - D*np.pi**2/L**2)}', file=fid)
+log_message(f'Equivalent delay: {abs(np.log(factor)/(C - D*np.pi**2/L**2))}', file=fid)
 
 
 # Plot neutron density
