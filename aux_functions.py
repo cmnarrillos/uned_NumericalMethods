@@ -483,7 +483,7 @@ def integrate_trapezoidal(x, fx, lims):
     a, b = lims
     h = (b - a) / (len(x) - 1)
 
-    integral = 0.5 * (fx[0] + fx[-1]) + sum(fx[1:-1])
+    integral = 0.5 * (fx[0] + fx[-1]) + np.sum(fx[1:-1])
     integral *= h
 
     return integral
