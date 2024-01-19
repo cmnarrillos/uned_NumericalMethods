@@ -37,7 +37,6 @@ def rhs(x, params={}):
         value of f(x) = -x
     """
     return -x
-    # return 3 * x**2
 
 
 def local_interpolator(x, params):
