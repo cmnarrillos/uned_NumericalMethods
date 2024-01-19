@@ -11,6 +11,20 @@ except ImportError:
     from aux_functions import integrate_trapezoidal
 
 
+def analytic_sol(x):
+    """
+    Analytical solution of the ode d2u/dx2 + u = -x
+    with BCS: u(0)=0, du/dx(1)=0
+
+    Args:
+        x (float/np.ndarray): independent variable
+
+    Returns:
+        y(x) = sin(x)/cos(1) - x
+    """
+    return np.sin(x)/np.cos(1) - x
+
+
 def rhs(x, params={}):
     """
     Right hand side of the differential equation d2u/dx2 + alpha u = f(x)
@@ -23,6 +37,7 @@ def rhs(x, params={}):
         value of f(x) = -x
     """
     return -x
+    # return 3 * x**2
 
 
 def local_interpolator(x, params):
@@ -119,7 +134,7 @@ def local_interpolator_derivative(x, params):
     return df_x
 
 
-def local_finite_elements_numerical(alpha2, f, h, order):
+def local_fe_matrix_numerical(alpha2, h, order):
     """
     Builds the system associated to the application of FEM method to the ODE
     d2u/dx2 + alpha^2 * u = f(x)
@@ -127,13 +142,11 @@ def local_finite_elements_numerical(alpha2, f, h, order):
 
     Args:
         alpha2 (float): parameter involved in the ODE to be solved (alpha^2)
-        f (function): right hand side of the ODE: f(x, params)
         h (float): size of the element
         order (int): order of the interpolators used
 
     Returns:
         A_local (np.ndarray): matrix of coefficients of the element in local coords
-        F_local (np.ndarray): vector involved in the system in local coords
     """
 
     # Initialize vector for numerical integration
@@ -141,7 +154,6 @@ def local_finite_elements_numerical(alpha2, f, h, order):
 
     # Initialize matrices
     A_local = np.zeros((order+1, order+1))
-    F_local = np.zeros((order+1, 1))
 
     for ii in range(order+1):
         params_ii = {'order': order,
@@ -166,14 +178,46 @@ def local_finite_elements_numerical(alpha2, f, h, order):
                 alpha2 * integrate_trapezoidal(x=x_local, fx=phi_ii * phi_jj, lims=(0, h))
             A_local[jj, ii] = A_local[ii, jj]
 
+    return A_local
+
+
+def local_fe_force_numerical(f, lims, order):
+    """
+    Builds the system associated to the application of FEM method to the ODE
+    d2u/dx2 + alpha^2 * u = f(x)
+    computes numerically the involved integrals
+
+    Args:
+        f (function): right hand side of the ODE: f(x, params)
+        lims (list/tuple): limits of the element in global coords
+        order (int): order of the interpolators used
+
+    Returns:
+        A_local (np.ndarray): matrix of coefficients of the element in local coords
+    """
+    h = lims[-1] - lims[0]
+
+    # Initialize vector for numerical integration
+    x_local = np.linspace(0, h, 10001)
+    x_global = np.linspace(lims[0], lims[-1], 10001)
+    f_x = f(x_global, params={})
+
+    # Initialize array
+    F_local = np.zeros((order+1, 1))
+
+    for ii in range(order+1):
+        params_ii = {'order': order,
+                     'index': ii+1,
+                     'h': h}
+        phi_ii = local_interpolator(x_local, params_ii)
+
         # F local
-        f_x = f(x_local, params={})
-        F_local[ii] = integrate_trapezoidal(x=x_local, fx=phi_ii * f_x, lims=(0, h))
+        F_local[ii] = -integrate_trapezoidal(x=x_local, fx=phi_ii*f_x, lims=(0, h))
 
-    return A_local, F_local
+    return F_local
 
 
-def local_finite_elements_analytical(alpha2, h, order):
+def local_fe_matrix_analytical(alpha2, h, order):
     """
     Builds the system associated to the application of FEM method to the ODE
     d2u/dx2 + alpha^2 * u = f(x)
@@ -186,7 +230,6 @@ def local_finite_elements_analytical(alpha2, h, order):
 
     Returns:
         A_local (np.ndarray): matrix of coefficients of the element in local coords
-        F_local (np.ndarray): vector involved in the system in local coords
 
     Raises:
         ValueError if order not implemented
@@ -194,7 +237,6 @@ def local_finite_elements_analytical(alpha2, h, order):
 
     # Initialize
     A_local = np.zeros((order+1, order+1))
-    F_local = np.zeros((order+1, 1))
 
     if order == 1:
         # A
@@ -204,10 +246,6 @@ def local_finite_elements_analytical(alpha2, h, order):
         # - Out of diagonal
         A_local[1, 0] = -1/h - alpha2 * h/6
         A_local[0, 1] = -1/h - alpha2 * h/6
-
-        # F
-        F_local[0] = -h**2/6
-        F_local[1] = h**2/3
 
     elif order == 2:
         # A
@@ -223,15 +261,45 @@ def local_finite_elements_analytical(alpha2, h, order):
         A_local[2, 1] = -8/(3*h) - alpha2 * h/15
         A_local[1, 2] = -8/(3*h) - alpha2 * h/15
 
-        # F
-        F_local[0] = 0
-        F_local[1] = -h**2/3
-        F_local[1] = -h**2/6
+    else:
+        raise ValueError('Analytical local matrix and force vector are not implemented for the required order')
+
+    return A_local
+
+
+def local_fe_force_analytical(f, lims, order):
+    """
+    Builds the system associated to the application of FEM method to the ODE
+    d2u/dx2 + alpha^2 * u = f(x)
+    computes numerically the involved integrals
+
+    Args:
+        f (function): right hand side of the ODE: f(x, params)
+        lims (list/tuple): limits of the element in global coords
+        order (int): order of the interpolators used
+
+    Returns:
+        A_local (np.ndarray): matrix of coefficients of the element in local coords
+    """
+    h = lims[-1] - lims[0]
+
+    # Extract averaged force in the element
+    x_global = np.linspace(lims[0], lims[-1], 10001)
+    f_x = f(x_global, params={})
+
+    f_avg = integrate_trapezoidal(x_global, f_x, lims) / h
+
+    # Initialize array
+    F_local = np.zeros((order+1, 1))
+
+    if order == 1:
+        F_local[0] = -h/2 * f_avg
+        F_local[1] = -h/2 * f_avg
 
     else:
         raise ValueError('Analytical local matrix and force vector are not implemented for the required order')
 
-    return A_local, F_local
+    return F_local
 
 
 def finite_elements(alpha2, f, num_elem, order, lims, analytical=False):
@@ -266,9 +334,13 @@ def finite_elements(alpha2, f, num_elem, order, lims, analytical=False):
 
     # Get local system of an individual element
     if analytical:
-        A_loc, F_loc = local_finite_elements_analytical(alpha2=alpha2, h=h, order=order)
+        try:
+            A_loc = local_fe_matrix_analytical(alpha2=alpha2, h=h, order=order)
+        except ValueError:
+            print('Order required not implemented analytically, solving using numerical methods')
+            A_loc = local_fe_matrix_numerical(alpha2=alpha2, h=h, order=order)
     else:
-        A_loc, F_loc = local_finite_elements_numerical(alpha2=alpha2, f=f, h=h, order=order)
+        A_loc = local_fe_matrix_numerical(alpha2=alpha2, h=h, order=order)
 
     # Build global matrix & vector
     A = np.zeros((order*num_elem + 1, order*num_elem + 1))
@@ -281,6 +353,17 @@ def finite_elements(alpha2, f, num_elem, order, lims, analytical=False):
         for ii in range(order+1):
             mapping[ii, ee*order + ii] = 1
 
+        # Compute local force
+        elem_lims = (lims[0] + ee*h, lims[0] + (ee+1)*h)
+        if analytical:
+            try:
+                F_loc = local_fe_force_analytical(f=f, lims=elem_lims, order=order)
+            except ValueError:
+                print('Order required not implemented analytically, solving using numerical methods')
+                F_loc = local_fe_force_numerical(f=f, lims=elem_lims, order=order)
+        else:
+            F_loc = local_fe_force_numerical(f=f, lims=elem_lims, order=order)
+
         # Add contribution to global system
         A += np.matmul(mapping.T, np.matmul(A_loc, mapping))
         F += np.matmul(mapping.T, F_loc)
@@ -288,4 +371,3 @@ def finite_elements(alpha2, f, num_elem, order, lims, analytical=False):
     return A, F, x_i
 
 
-A_out, F_out, x = finite_elements(alpha2=1., f=rhs, num_elem=4, order=2, lims=(0, 1))
