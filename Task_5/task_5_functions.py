@@ -202,7 +202,7 @@ def local_fe_vector_numerical(f, lims, order):
     f_x = f(x_global, params={})
 
     # Initialize array
-    F_local = np.zeros((order+1, 1))
+    F_local = np.zeros((order+1))
 
     for ii in range(order+1):
         params_ii = {'order': order,
@@ -283,7 +283,7 @@ def local_fe_vector_analytical(lims, order):
     x_0 = lims[0]
 
     # Initialize array
-    F_local = np.zeros((order+1, 1))
+    F_local = np.zeros((order+1))
 
     if order == 1:
         F_local[0] = h/2 * x_0 + h**2/6
@@ -315,7 +315,7 @@ def local_fe_vector_averaged(f_avg, lims, order):
     h = lims[-1] - lims[0]
 
     # Initialize array
-    F_local = np.zeros((order+1, 1))
+    F_local = np.zeros((order+1))
 
     if order == 1:
         F_local[0] = -h/2 * f_avg
@@ -372,7 +372,7 @@ def finite_elements(alpha2, f, num_elem, order, lims, analytical=False):
 
     # Build global matrix & vector
     A = np.zeros((order*num_elem + 1, order*num_elem + 1))
-    F = np.zeros((order*num_elem + 1, 1))
+    F = np.zeros((order*num_elem + 1))
 
     # Sum over elements
     for ee in range(num_elem):
