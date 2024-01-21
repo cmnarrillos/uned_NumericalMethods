@@ -33,6 +33,8 @@ else:
     if not os.path.exists('./Figures/Dirichlet_both/'):
         os.makedirs('./Figures/Dirichlet_both/')
 
+file = open(f'./{fig_path}/tables.txt', 'w')
+
 # Compute analytical solution for plots
 x_analytic = np.linspace(domain[0], domain[-1], 1001)
 u_analytic = analytic_sol(x_analytic)
@@ -47,6 +49,9 @@ u_store = []
 err_store = []
 
 for nelem, order in zip(nelem_list, order_list):
+    file.write('\n')
+    file.write(f'{nelem} Elements, Order {order}\n')
+    file.write('\n\n')
     # Create generic system for the function given by the rhs and alpha^2
     A_out, F_out, x = finite_elements(alpha2=alpha2, f=rhs,
                                       num_elem=nelem, order=order,
@@ -77,7 +82,19 @@ for nelem, order in zip(nelem_list, order_list):
         u_sol[-1] = u_N
 
     # Compute error wrt analytical solution
-    err = analytic_sol(x) - u_sol[:]
+    u_ref = analytic_sol(x)
+    err = u_ref - u_sol[:]
+    file.write('\\begin{tabular}{|c||c|c|c|}\n')
+    file.write('\hline\n')
+    file.write('$x$ & $u_{ref}(x)$ & $u_{FE}(x)$ & $\\varepsilon(x)$ \\\\\n')
+    file.write('\hline\hline\n')
+    for ii in range(x.shape[0]):
+        file.write(f'{x[ii]} & {round(u_ref[ii], 6)} & '
+                   f'{round(u_sol[ii], 6)} & {round(err[ii], 6)} \\\\\n')
+        file.write('\hline\n')
+    file.write('\\end{tabular}\n')
+    file.write('\n\n\n\n\n')
+
 
     x_store.append(x)
     u_store.append(u_sol)
@@ -175,3 +192,6 @@ plt.legend(fontsize=14)
 plt.savefig(f'./{fig_path}/all_cases_err_log.png',
             bbox_inches='tight')
 plt.close()
+
+
+file.close()
